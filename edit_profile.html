@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen bg-gray-100 text-gray-900">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-white shadow-md z-50 h-14 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <a href="{{ url_for('home') }}" class="text-3xl font-extrabold text-blue-600">Xplora</a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('feed') }}" class="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-home text-xl text-gray-700"></i>
+                </a>
+                <a href="{{ url_for('profile', username=current_user.username) }}" class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded-full">
+                    <img src="{{ url_for('static', filename='Uploads/' + current_user.profile_pic) if current_user.profile_pic and current_user.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" alt="Profile" class="w-8 h-8 rounded-full border border-gray-300">
+                </a>
+                <a href="{{ url_for('logout') }}" class="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-sign-out-alt text-xl text-gray-700"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto pt-20 px-4 pb-8">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Profile Preview Card -->
+        <div class="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
+            <!-- Banner Preview -->
+            <div id="banner-preview" class="h-64 relative" style="
+                {% if current_user.banner_type == 'color' %}
+                    background-color: {{ current_user.banner_color or '#3498db' }};
+                {% elif current_user.banner_type == 'gradient' %}
+                    background: linear-gradient(135deg, {{ current_user.banner_gradient_start or '#3498db' }}, {{ current_user.banner_gradient_end or '#9b59b6' }});
+                {% elif current_user.banner_type == 'image' and current_user.banner_image %}
+                    background-image: url('{{ url_for('static', filename='Uploads/' + current_user.banner_image) }}');
+                    background-size: cover;
+                    background-position: center;
+                {% else %}
+                    background: linear-gradient(135deg, #3498db, #9b59b6);
+                {% endif %}
+            ">
+                <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div class="absolute top-4 left-4 bg-white bg-opacity-90 px-4 py-2 rounded-lg">
+                    <p class="text-sm font-semibold text-gray-700"><i class="fas fa-eye mr-2"></i>Banner Preview</p>
+                </div>
+            </div>
+            
+            <!-- Site Background Preview (New) -->
+            <div id="site-bg-preview" class="h-64 relative mt-4" style="
+                {% if current_user.site_bg_type == 'color' %}
+                    background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+                {% elif current_user.site_bg_type == 'gradient' %}
+                    background: linear-gradient(135deg, {{ current_user.site_bg_gradient_start or '#f3f4f6' }}, {{ current_user.site_bg_gradient_end or '#e5e7eb' }});
+                {% elif current_user.site_bg_type == 'image' and current_user.site_bg_image %}
+                    background-image: url('{{ url_for('static', filename='Uploads/' + current_user.site_bg_image) }}');
+                    background-size: cover;
+                    background-position: center;
+                {% elif current_user.site_bg_type == 'pattern' %}
+                    background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+                {% else %}
+                    background-color: #f3f4f6;
+                {% endif %}
+            ">
+                <div class="absolute top-4 left-4 bg-white bg-opacity-90 px-4 py-2 rounded-lg">
+                    <p class="text-sm font-semibold text-gray-700"><i class="fas fa-eye mr-2"></i>Site Background Preview</p>
+                </div>
+                <!-- Simulate content over bg -->
+                <div class="absolute inset-0 flex items-center justify-center text-gray-800 opacity-80">
+                    <p class="text-2xl">Sample Page Content</p>
+                </div>
+            </div>
+            
+            <!-- Profile Section -->
+            <div class="p-6 text-center" style="background-color: {{ current_user.bg_color or '#ecf0f1' }}; color: {{ current_user.text_color or '#2c3e50' }};">
+                <div class="-mt-20 mb-4">
+                    {% if current_user.profile_pic and current_user.profile_pic != 'default.png' %}
+                        <img src="{{ url_for('static', filename='Uploads/' + current_user.profile_pic) }}" 
+                             alt="Profile Picture" 
+                             class="w-32 h-32 rounded-full mx-auto object-cover border-4" 
+                             style="border-color: {{ current_user.theme_color or '#3498db' }};">
+                    {% else %}
+                        <div class="w-32 h-32 rounded-full mx-auto flex items-center justify-center text-5xl font-bold border-4" 
+                             style="background-color: {{ current_user.theme_color or '#3498db' }}; color: white; border-color: white;">
+                            {{ current_user.username[0].upper() }}
+                        </div>
+                    {% endif %}
+                </div>
+                <h2 class="text-2xl font-bold mb-2">{{ current_user.username }}</h2>
+                <p class="text-gray-600">{{ current_user.bio or 'No bio yet' }}</p>
+            </div>
+        </div>
+
+        <!-- Edit Form -->
+        <form method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow-md p-8">
+            {{ form.hidden_tag() }}
+            
+            <!-- Bio Section -->
+            <div class="mb-8">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Basic Info</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.bio.label }}</label>
+                        {{ form.bio(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200", rows=4) }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.profile_pic.label }}</label>
+                        {{ form.profile_pic(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200") }}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-8">
+
+            <!-- Banner Customization -->
+            <div class="mb-8">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Profile Banner (YouTube-Style)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.banner_type.label }}</label>
+                        {{ form.banner_type(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200", onchange="toggleBannerOptions(); updateBannerPreview()") }}
+                    </div>
+                </div>
+                
+                <div id="banner-color-section" class="mt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.banner_color.label }}</label>
+                    {{ form.banner_color(type="color", class="w-20 h-10 rounded", onchange="updateBannerPreview()") }}
+                </div>
+                
+                <div id="banner-gradient-section" class="mt-4 hidden grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.banner_gradient_start.label }}</label>
+                        {{ form.banner_gradient_start(type="color", class="w-20 h-10 rounded", onchange="updateBannerPreview()") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.banner_gradient_end.label }}</label>
+                        {{ form.banner_gradient_end(type="color", class="w-20 h-10 rounded", onchange="updateBannerPreview()") }}
+                    </div>
+                </div>
+                
+                <div id="banner-image-section" class="mt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.banner_image.label }}</label>
+                    {{ form.banner_image(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200") }}
+                    <p class="text-sm text-gray-500 mt-2">Recommended size: 2560x1440 (wide like YouTube channel art)</p>
+                </div>
+                
+                <!-- Banner Presets (Enhanced) -->
+                <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors" onclick="setBanner('gradient', '#3498db', '#2980b9')">
+                        Ocean Blue
+                    </button>
+                    <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors" onclick="setBanner('gradient', '#e67e22', '#d35400')">
+                        Sunset Orange
+                    </button>
+                    <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors" onclick="setBanner('color', '#27ae60')">
+                        Forest Green
+                    </button>
+                    <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors" onclick="setBanner('gradient', '#8e44ad', '#9b59b6')">
+                        Mystic Purple
+                    </button>
+                </div>
+            </div>
+
+            <hr class="my-8">
+
+            <!-- Site Background Customization -->
+            <div class="mb-8">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Site Background</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.site_bg_type.label }}</label>
+                        {{ form.site_bg_type(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200", onchange="toggleSiteBgOptions(); updateSiteBgPreview()") }}
+                    </div>
+                </div>
+                
+                <div id="sitebg-color-section" class="mt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.site_bg_color.label }}</label>
+                    {{ form.site_bg_color(type="color", class="w-20 h-10 rounded", onchange="updateSiteBgPreview()") }}
+                </div>
+                
+                <div id="sitebg-gradient-section" class="mt-4 hidden grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.site_bg_gradient_start.label }}</label>
+                        {{ form.site_bg_gradient_start(type="color", class="w-20 h-10 rounded", onchange="updateSiteBgPreview()") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.site_bg_gradient_end.label }}</label>
+                        {{ form.site_bg_gradient_end(type="color", class="w-20 h-10 rounded", onchange="updateSiteBgPreview()") }}
+                    </div>
+                </div>
+                
+                <div id="sitebg-image-section" class="mt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.site_bg_image.label }}</label>
+                    {{ form.site_bg_image(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200") }}
+                </div>
+                
+                <div id="sitebg-pattern-section" class="mt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.site_bg_pattern.label }}</label>
+                    {{ form.site_bg_pattern(class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200", onchange="updateSiteBgPreview()") }}
+                    <label class="block text-sm font-medium text-gray-700 mt-4 mb-2">Pattern Base Color</label>
+                    {{ form.site_bg_color(type="color", class="w-20 h-10 rounded", onchange="updateSiteBgPreview()") }}
+                </div>
+            </div>
+
+            <hr class="my-8">
+
+            <!-- Theme Colors -->
+            <div class="mb-8">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Theme Colors</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.theme_color.label }} (Buttons, Accents)</label>
+                        {{ form.theme_color(type="color", class="w-20 h-10 rounded") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.bg_color.label }} (Content Background)</label>
+                        {{ form.bg_color(type="color", class="w-20 h-10 rounded") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.text_color.label }}</label>
+                        {{ form.text_color(type="color", class="w-20 h-10 rounded") }}
+                    </div>
+                </div>
+                
+                <!-- Theme Presets (Enhanced with more options) -->
+                <div class="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors" onclick="setTheme('#3498db', '#ecf0f1', '#2c3e50')">
+                        Ocean Blue
+                    </button>
+                    <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors" onclick="setTheme('#e74c3c', '#fadbd8', '#922b21')">
+                        Desert Red
+                    </button>
+                    <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors" onclick="setTheme('#9b59b6', '#f4ecf7', '#4a235a')">
+                        Royal Purple
+                    </button>
+                    <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors" onclick="setTheme('#2c3e50', '#ecf0f1', '#ecf0f1')">
+                        Dark Mode
+                    </button>
+                    <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors" onclick="setTheme('#27ae60', '#e9f7ef', '#196f3d')">
+                        Nature Green
+                    </button>
+                </div>
+                <p id="contrast-warning" class="text-red-500 mt-2 hidden">Warning: Low contrast between text and background – may affect readability.</p>
+            </div>
+
+            <hr class="my-8">
+
+            <!-- Submit Button -->
+            <div>
+                {{ form.submit(class="w-full py-4 rounded-xl text-white font-bold text-lg transition-all hover:opacity-90 shadow-lg transform hover:scale-105", style="background-color: " + (current_user.theme_color or '#3498db')) }}
+            </div>
+        </form>
+    </main>
+</div>
+
+<script>
+    // Toggle banner options based on selection
+    function toggleBannerOptions() {
+        const bannerType = document.getElementById('banner_type').value;
+        
+        document.getElementById('banner-color-section').classList.add('hidden');
+        document.getElementById('banner-gradient-section').classList.add('hidden');
+        document.getElementById('banner-image-section').classList.add('hidden');
+        
+        if (bannerType === 'color') {
+            document.getElementById('banner-color-section').classList.remove('hidden');
+        } else if (bannerType === 'gradient') {
+            document.getElementById('banner-gradient-section').classList.remove('hidden');
+        } else if (bannerType === 'image') {
+            document.getElementById('banner-image-section').classList.remove('hidden');
+        }
+    }
+
+    // Toggle site bg options
+    function toggleSiteBgOptions() {
+        const bgType = document.getElementById('site_bg_type').value;
+        
+        document.getElementById('sitebg-color-section').classList.add('hidden');
+        document.getElementById('sitebg-gradient-section').classList.add('hidden');
+        document.getElementById('sitebg-image-section').classList.add('hidden');
+        document.getElementById('sitebg-pattern-section').classList.add('hidden');
+        
+        if (bgType === 'color') {
+            document.getElementById('sitebg-color-section').classList.remove('hidden');
+        } else if (bgType === 'gradient') {
+            document.getElementById('sitebg-gradient-section').classList.remove('hidden');
+        } else if (bgType === 'image') {
+            document.getElementById('sitebg-image-section').classList.remove('hidden');
+        } else if (bgType === 'pattern') {
+            document.getElementById('sitebg-pattern-section').classList.remove('hidden');
+        }
+    }
+
+    // Update banner preview
+    function updateBannerPreview() {
+        const bannerType = document.getElementById('banner_type').value;
+        const bannerPreview = document.getElementById('banner-preview');
+        
+        if (bannerType === 'color') {
+            const color = document.getElementById('banner_color').value;
+            bannerPreview.style.background = color;
+            bannerPreview.style.backgroundImage = 'none';
+        } else if (bannerType === 'gradient') {
+            const start = document.getElementById('banner_gradient_start').value;
+            const end = document.getElementById('banner_gradient_end').value;
+            bannerPreview.style.background = `linear-gradient(135deg, ${start}, ${end})`;
+            bannerPreview.style.backgroundImage = 'none';
+        } else if (bannerType === 'image') {
+            // For image, preview would require file reader, but skip for simplicity (shows after upload)
+            bannerPreview.style.background = '#f3f4f6';  // Placeholder
+        }
+    }
+
+    // Update site bg preview (New)
+    function updateSiteBgPreview() {
+        const bgType = document.getElementById('site_bg_type').value;
+        const siteBgPreview = document.getElementById('site-bg-preview');
+        
+        siteBgPreview.style.backgroundImage = 'none';  // Reset
+        
+        if (bgType === 'color') {
+            const color = document.getElementById('site_bg_color').value;
+            siteBgPreview.style.backgroundColor = color;
+        } else if (bgType === 'gradient') {
+            const start = document.getElementById('site_bg_gradient_start').value;
+            const end = document.getElementById('site_bg_gradient_end').value;
+            siteBgPreview.style.background = `linear-gradient(135deg, ${start}, ${end})`;
+        } else if (bgType === 'pattern') {
+            const pattern = document.getElementById('site_bg_pattern').value;
+            const color = document.getElementById('site_bg_color').value;
+            siteBgPreview.style.backgroundColor = color;
+            // Simulate patterns (add more CSS in base.html for 'bricks', 'zigzag')
+            if (pattern === 'dots') {
+                siteBgPreview.style.backgroundImage = 'radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px)';
+                siteBgPreview.style.backgroundSize = '20px 20px';
+            } else if (pattern === 'grid') {
+                siteBgPreview.style.backgroundImage = 'linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)';
+                siteBgPreview.style.backgroundSize = '20px 20px';
+            } // ... add for others ...
+        } else if (bgType === 'image') {
+            siteBgPreview.style.backgroundColor = '#f3f4f6';  // Placeholder
+        }
+    }
+
+    // Set banner preset
+    function setBanner(type, color1, color2 = '') {
+        document.getElementById('banner_type').value = type;
+        if (type === 'color') {
+            document.getElementById('banner_color').value = color1;
+        } else if (type === 'gradient') {
+            document.getElementById('banner_gradient_start').value = color1;
+            document.getElementById('banner_gradient_end').value = color2;
+        }
+        toggleBannerOptions();
+        updateBannerPreview();
+    }
+
+    // Set theme colors
+    function setTheme(primary, background, text) {
+        document.getElementById('theme_color').value = primary;
+        document.getElementById('bg_color').value = background;
+        document.getElementById('text_color').value = text;
+        checkContrast(background, text);
+    }
+
+    // Simple contrast check (New - for accessibility)
+    function checkContrast(bg, text) {
+        const bgRgb = hexToRgb(bg);
+        const textRgb = hexToRgb(text);
+        const contrast = (luminance(bgRgb) + 0.05) / (luminance(textRgb) + 0.05);
+        const warning = document.getElementById('contrast-warning');
+        if (contrast < 4.5) {  // WCAG AA minimum
+            warning.classList.remove('hidden');
+        } else {
+            warning.classList.add('hidden');
+        }
+    }
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    }
+
+    function luminance(rgb) {
+        const a = [rgb.r, rgb.g, rgb.b].map(v => {
+            v /= 255;
+            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleBannerOptions();
+        toggleSiteBgOptions();
+        updateBannerPreview();
+        updateSiteBgPreview();
+    });
+</script>
+{% endblock %}

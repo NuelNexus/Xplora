@@ -1,0 +1,31 @@
+{% extends "component.html" %}
+
+{% block main %}
+<div class="bg-white dark-mode:bg-gray-800 p-4 rounded-lg shadow-sm">
+    <h2 class="text-2xl font-bold text-gray-900 dark-mode:text-white mb-4">Add Archaeological Finding</h2>
+    <form method="POST" id="findingForm">
+        {{ form.hidden_tag() }}
+        <div class="mb-4">
+            <label for="description" class="block text-sm font-medium text-gray-700 dark-mode:text-gray-300">{{ form.description.label.text }}</label>
+            {{ form.description(class="mt-1 w-full p-2 rounded bg-gray-100 dark-mode:bg-gray-600 text-gray-900 dark-mode:text-white placeholder-gray-400 dark-mode:placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 dark-mode:focus:ring-indigo-500", rows=3) }}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label for="latitude" class="block text-sm font-medium text-gray-700 dark-mode:text-gray-300">{{ form.latitude.label.text }}</label>
+                {{ form.latitude(class="mt-1 w-full p-2 rounded bg-gray-100 dark-mode:bg-gray-600 text-gray-900 dark-mode:text-white placeholder-gray-400 dark-mode:placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 dark-mode:focus:ring-indigo-500") }}
+            </div>
+            <div>
+                <label for="longitude" class="block text-sm font-medium text-gray-700 dark-mode:text-gray-300">{{ form.longitude.label.text }}</label>
+                {{ form.longitude(class="mt-1 w-full p-2 rounded bg-gray-100 dark-mode:bg-gray-600 text-gray-900 dark-mode:text-white placeholder-gray-400 dark-mode:placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 dark-mode:focus:ring-indigo-500") }}
+            </div>
+        </div>
+        <div class="flex space-x-2 mb-4">
+            <button type="button" class="bg-blue-100 dark-mode:bg-gray-700 text-blue-600 dark-mode:text-indigo-400 hover:bg-blue-200 dark-mode:hover:bg-gray-600 px-4 py-2 rounded transition-colors" onclick="getLocation()"><i class="fas fa-map-pin mr-2"></i> Use My Location</button>
+            <button type="button" class="bg-blue-100 dark-mode:bg-gray-700 text-blue-600 dark-mode:text-indigo-400 hover:bg-blue-200 dark-mode:hover:bg-gray-600 px-4 py-2 rounded transition-colors" onclick="randomArchaeoSite()"><i class="fas fa-dice mr-2"></i> Random Site</button>
+        </div>
+        <p class="text-sm text-gray-500 dark-mode:text-gray-400 mb-4">Tip: Click to auto-fill or enter manually!</p>
+        {{ form.submit(class="bg-blue-600 dark-mode:bg-indigo-600 hover:bg-blue-700 dark-mode:hover:bg-indigo-500 text-white px-4 py-2 rounded transition-colors") }}
+    </form>
+    <a href="{{ url_for('map_view') }}" class="mt-4 inline-block bg-gray-500 hover:bg-gray-600 dark-mode:bg-gray-600 dark-mode:hover:bg-gray-500 text-white px-4 py-2 rounded transition-colors">Back to Map</a>
+</div>
+{% endblock %}

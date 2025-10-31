@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-300 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('feed') }}" class="text-2xl font-bold text-blue-600">Xplora</a>
+                <div class="h-6 w-px bg-gray-300"></div>
+                <h1 class="text-xl font-semibold text-gray-800">Messages</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('feed') }}" class="p-3 rounded-full hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-home text-xl text-gray-600"></i>
+                </a>
+                <a href="{{ url_for('profile', username=current_user.username) }}" class="flex items-center space-x-3 p-2 hover:bg-gray-200 rounded-full transition-colors">
+                    <img src="{{ url_for('static', filename='Uploads/' + current_user.profile_pic) if current_user.profile_pic and current_user.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" 
+                         alt="Profile" 
+                         class="w-10 h-10 rounded-full border-2 border-blue-500">
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto px-6 py-8 flex gap-8">
+        <!-- Conversations Sidebar -->
+        <aside class="w-96 bg-white rounded-2xl shadow-sm border border-gray-200 h-[calc(100vh-12rem)] overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Messages</h2>
+                <div class="relative">
+                    <input type="text" 
+                           placeholder="Search messages..." 
+                           class="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-gray-700 placeholder-gray-500">
+                    <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto h-full">
+                <!-- Conversation List -->
+                <div class="space-y-1 p-2">
+                    <!-- Sample conversations would go here -->
+                    <div class="p-4 hover:bg-gray-100 rounded-xl cursor-pointer transition-colors border-l-4 border-blue-500 bg-blue-50">
+                        <div class="flex items-center space-x-4">
+                            <div class="relative">
+                                <img src="https://placehold.co/48x48" 
+                                     alt="User" 
+                                     class="w-12 h-12 rounded-full border-2 border-green-500">
+                                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-semibold text-gray-900 truncate">Archaeology Team</span>
+                                    <span class="text-xs text-gray-500">12:30</span>
+                                </div>
+                                <p class="text-sm text-gray-600 truncate">Hey, check out this new discovery!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 h-[calc(100vh-12rem)] overflow-hidden flex flex-col">
+            <!-- Chat Header -->
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between bg-white">
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <img src="{{ url_for('static', filename='Uploads/' + other_user.profile_pic) if other_user.profile_pic and other_user.profile_pic != 'default.png' else 'https://placehold.co/48x48' }}" 
+                             alt="{{ other_user.username }}" 
+                             class="w-14 h-14 rounded-full border-2 border-blue-500">
+                        <div class="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">{{ other_user.username }}</h2>
+                        <div class="flex items-center space-x-2">
+                            <div id="typing-indicator" class="hidden flex items-center space-x-2">
+                                <div class="flex space-x-1">
+                                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+                                </div>
+                                <span class="text-sm text-gray-500">typing...</span>
+                            </div>
+                            <span id="online-status" class="text-sm text-green-600 font-medium">Online now</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="p-3 rounded-full hover:bg-gray-200 transition-colors text-gray-600">
+                        <i class="fas fa-phone text-xl"></i>
+                    </button>
+                    <button class="p-3 rounded-full hover:bg-gray-200 transition-colors text-gray-600">
+                        <i class="fas fa-video text-xl"></i>
+                    </button>
+                    <button class="p-3 rounded-full hover:bg-gray-200 transition-colors text-gray-600">
+                        <i class="fas fa-info-circle text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messages-container" class="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white space-y-4">
+                {% if convo %}
+                    {% for msg in convo %}
+                    <div class="flex items-end space-x-3 {{ 'flex-row-reverse space-x-reverse' if msg.sender_id == current_user.id }}">
+                        <!-- Profile Picture -->
+                        <img src="{{ url_for('static', filename='Uploads/' + msg.sender.profile_pic) if msg.sender.profile_pic and msg.sender.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" 
+                             alt="{{ msg.sender.username }}" 
+                             class="w-10 h-10 rounded-full flex-shrink-0 border-2 {{ 'border-blue-500' if msg.sender_id == current_user.id else 'border-gray-300' }}">
+                        
+                        <!-- Message Bubble -->
+                        <div class="max-w-lg">
+                            <div class="{{ 'bg-blue-500 text-white rounded-2xl rounded-br-md' if msg.sender_id == current_user.id else 'bg-white border border-gray-200 rounded-2xl rounded-bl-md shadow-sm' }} px-4 py-3">
+                                <p class="text-sm leading-relaxed">{{ msg.content }}</p>
+                            </div>
+                            <div class="flex items-center space-x-2 mt-1 px-2 {{ 'justify-end' if msg.sender_id == current_user.id }}">
+                                <span class="text-xs text-gray-500">{{ msg.timestamp.strftime('%H:%M') }}</span>
+                                {% if msg.sender_id == current_user.id %}
+                                <i class="fas fa-check text-xs text-blue-500"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="flex flex-col items-center justify-center h-full text-center py-12">
+                        <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-6">
+                            <i class="fas fa-comments text-3xl text-blue-500"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">No messages yet</h3>
+                        <p class="text-gray-600 mb-6 max-w-md">Send a message to start a conversation with {{ other_user.username }}</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Message Input -->
+            <div class="p-6 border-t border-gray-200 bg-white">
+                <form method="POST" action="{{ url_for('messages', user_id=other_user.id) }}" class="flex items-end space-x-4" id="message-form">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Attachment Button -->
+                    <button type="button" class="p-3 rounded-full hover:bg-gray-200 transition-colors text-gray-600 flex-shrink-0">
+                        <i class="fas fa-plus text-xl"></i>
+                    </button>
+                    
+                    <!-- Emoji Button -->
+                    <button type="button" class="p-3 rounded-full hover:bg-gray-200 transition-colors text-gray-600 flex-shrink-0">
+                        <i class="far fa-smile text-xl"></i>
+                    </button>
+                    
+                    <!-- Message Input -->
+                    <div class="flex-1 relative">
+                        <textarea name="content" 
+                                  id="message-input"
+                                  rows="1"
+                                  placeholder="Message..."
+                                  class="w-full px-4 py-3 pr-12 bg-gray-100 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-gray-700 placeholder-gray-500 max-h-32"
+                                  oninput="autoResize(this)"></textarea>
+                        
+                        <!-- Quick Actions -->
+                        <div class="absolute right-3 bottom-3 flex space-x-2">
+                            <button type="button" class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                                <i class="fas fa-image"></i>
+                            </button>
+                            <button type="button" class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <button type="button" class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Send Button -->
+                    <button type="submit" 
+                            id="send-button"
+                            class="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-paper-plane text-xl"></i>
+                    </button>
+                </form>
+                
+                <!-- Quick Reply Suggestions -->
+                <div class="flex space-x-2 mt-4 overflow-x-auto pb-2">
+                    <button type="button" class="quick-reply px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-sm text-gray-700 whitespace-nowrap transition-colors">
+                        👋 Hello there!
+                    </button>
+                    <button type="button" class="quick-reply px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-sm text-gray-700 whitespace-nowrap transition-colors">
+                        🔍 Found something interesting?
+                    </button>
+                    <button type="button" class="quick-reply px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-sm text-gray-700 whitespace-nowrap transition-colors">
+                        🗺️ Check out my latest finding
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Back to Profile Button -->
+<div class="fixed bottom-6 left-6">
+    <a href="{{ url_for('profile', username=other_user.username) }}" 
+       class="flex items-center space-x-3 bg-white hover:bg-gray-100 text-gray-700 px-6 py-3 rounded-2xl shadow-lg border border-gray-200 transition-all hover:scale-105">
+        <i class="fas fa-arrow-left"></i>
+        <span class="font-semibold">Back to Profile</span>
+    </a>
+</div>
+
+<script>
+    // Auto-resize textarea
+    function autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 128) + 'px';
+        
+        // Enable/disable send button
+        const sendButton = document.getElementById('send-button');
+        sendButton.disabled = textarea.value.trim().length === 0;
+    }
+
+    // Quick reply buttons
+    document.querySelectorAll('.quick-reply').forEach(button => {
+        button.addEventListener('click', function() {
+            const messageInput = document.getElementById('message-input');
+            messageInput.value = this.textContent.trim();
+            autoResize(messageInput);
+            messageInput.focus();
+        });
+    });
+
+    // Simulate typing indicator
+    function simulateTyping() {
+        const typingIndicator = document.getElementById('typing-indicator');
+        const onlineStatus = document.getElementById('online-status');
+        
+        // Show typing for 3 seconds every 30 seconds
+        setInterval(() => {
+            if (Math.random() > 0.7) { // 30% chance to show typing
+                typingIndicator.classList.remove('hidden');
+                onlineStatus.classList.add('hidden');
+                
+                setTimeout(() => {
+                    typingIndicator.classList.add('hidden');
+                    onlineStatus.classList.remove('hidden');
+                }, 3000);
+            }
+        }, 30000);
+    }
+
+    // Scroll to bottom of messages
+    function scrollToBottom() {
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Message sending animation
+    document.getElementById('message-form').addEventListener('submit', function(e) {
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+        
+        if (message.length === 0) {
+            e.preventDefault();
+            return;
+        }
+        
+        // Add sending animation
+        const sendButton = document.getElementById('send-button');
+        sendButton.innerHTML = '<i class="fas fa-spinner fa-spin text-xl"></i>';
+        sendButton.disabled = true;
+        
+        // The form will submit normally after this
+    });
+
+    // Enter key to send (Shift+Enter for new line)
+    document.getElementById('message-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('message-form').dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // Auto-focus message input
+    document.addEventListener('DOMContentLoaded', function() {
+        const messageInput = document.getElementById('message-input');
+        messageInput.focus();
+        
+        scrollToBottom();
+        simulateTyping();
+        
+        // Add smooth scroll behavior
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.style.scrollBehavior = 'smooth';
+    });
+
+    // Real-time message updates (simulated)
+    function simulateNewMessage() {
+        setTimeout(() => {
+            if (Math.random() > 0.8) { // 20% chance of receiving a message
+                const messagesContainer = document.getElementById('messages-container');
+                const newMessage = document.createElement('div');
+                newMessage.className = 'flex items-end space-x-3';
+                newMessage.innerHTML = `
+                    <img src="{{ url_for('static', filename='Uploads/' + other_user.profile_pic) if other_user.profile_pic and other_user.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" 
+                         alt="{{ other_user.username }}" 
+                         class="w-10 h-10 rounded-full flex-shrink-0 border-2 border-gray-300">
+                    <div class="max-w-lg">
+                        <div class="bg-white border border-gray-200 rounded-2xl rounded-bl-md shadow-sm px-4 py-3">
+                            <p class="text-sm leading-relaxed">Hey, I just found something amazing! 🗿</p>
+                        </div>
+                        <div class="flex items-center space-x-2 mt-1 px-2">
+                            <span class="text-xs text-gray-500">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(newMessage);
+                scrollToBottom();
+                
+                // Show notification
+                showMessageNotification();
+            }
+        }, 10000); // Check every 10 seconds
+    }
+
+    function showMessageNotification() {
+        // Create a subtle notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-20 right-6 bg-blue-500 text-white px-4 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300';
+        notification.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <img src="{{ url_for('static', filename='Uploads/' + other_user.profile_pic) if other_user.profile_pic and other_user.profile_pic != 'default.png' else 'https://placehold.co/32x32' }}" 
+                     alt="{{ other_user.username }}" 
+                     class="w-8 h-8 rounded-full">
+                <div>
+                    <p class="font-semibold">{{ other_user.username }}</p>
+                    <p class="text-sm opacity-90">Sent a message</p>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Animate out after 3 seconds
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // Start simulating messages after page load
+    document.addEventListener('DOMContentLoaded', simulateNewMessage);
+</script>
+
+<style>
+    /* Custom scrollbar for messages */
+    #messages-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #messages-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    #messages-container::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 10px;
+    }
+    
+    #messages-container::-webkit-scrollbar-thumb:hover {
+        background: #a0aec0;
+    }
+    
+    /* Smooth animations */
+    .message-enter {
+        animation: messageEnter 0.3s ease-out;
+    }
+    
+    @keyframes messageEnter {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Typing animation */
+    @keyframes bounce {
+        0%, 80%, 100% {
+            transform: scale(0);
+        }
+        40% {
+            transform: scale(1);
+        }
+    }
+    
+    /* Quick replies scrollbar */
+    .overflow-x-auto::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    .overflow-x-auto::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 2px;
+    }
+    
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 2px;
+    }
+    
+    /* Message bubble shadows */
+    .bg-white {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .bg-blue-500 {
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+</style>
+{% endblock %}

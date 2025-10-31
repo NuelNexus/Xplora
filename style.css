@@ -1,0 +1,188 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply relative text-base font-normal z-1 bg-gray-50 font-outfit;
+  }
+}
+
+@layer components {
+  .menu-item {
+    @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
+  }
+  .menu-item-active {
+    @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  }
+  .menu-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300;
+  }
+  .menu-item-icon {
+    @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400;
+  }
+  .menu-item-icon-active {
+    @apply text-brand-500 dark:text-brand-400;
+  }
+  .menu-item-icon-size svg {
+    @apply size-6 !important;
+  }
+  .menu-item-icon-inactive {
+    @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
+  }
+
+  .menu-item-arrow {
+    @apply relative;
+  }
+  .menu-item-arrow-active {
+    @apply rotate-180 text-brand-500 dark:text-brand-400;
+  }
+  .menu-item-arrow-inactive {
+    @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
+  }
+
+  .menu-dropdown-item {
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium;
+  }
+  .menu-dropdown-item-active {
+    @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  }
+  .menu-dropdown-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+  }
+
+  .menu-dropdown-badge {
+    @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase text-brand-500 dark:text-brand-400;
+  }
+  .menu-dropdown-badge-active {
+    @apply bg-brand-100 dark:bg-brand-500/20;
+  }
+  .menu-dropdown-badge-inactive {
+    @apply bg-brand-50 group-hover:bg-brand-100 dark:bg-brand-500/15 dark:group-hover:bg-brand-500/20;
+  }
+}
+@layer utilities {
+  /* Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply size-1.5;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-full dark:bg-gray-700;
+  }
+  /* For Remove Date Icon */
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="time"]::-webkit-inner-spin-button,
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+  }
+}
+
+.swiper-button-prev svg,
+.swiper-button-next svg {
+  @apply !h-auto !w-auto;
+}
+
+.carouselTwo .swiper-button-next:after,
+.carouselTwo .swiper-button-prev:after,
+.carouselFour .swiper-button-next:after,
+.carouselFour .swiper-button-prev:after {
+  @apply hidden;
+}
+.carouselTwo .swiper-button-next.swiper-button-disabled,
+.carouselTwo .swiper-button-prev.swiper-button-disabled,
+.carouselFour .swiper-button-next.swiper-button-disabled,
+.carouselFour .swiper-button-prev.swiper-button-disabled {
+  @apply bg-white/60 !opacity-100;
+}
+.carouselTwo .swiper-button-next,
+.carouselTwo .swiper-button-prev,
+.carouselFour .swiper-button-next,
+.carouselFour .swiper-button-prev {
+  @apply h-10 w-10 rounded-full border-[0.5px] border-white/10 bg-white/90 !text-gray-700 shadow-slider-navigation backdrop-blur-[10px];
+}
+
+.carouselTwo .swiper-button-prev,
+.carouselFour .swiper-button-prev {
+  @apply !left-3 sm:!left-4;
+}
+
+.carouselTwo .swiper-button-next,
+.carouselFour .swiper-button-next {
+  @apply !right-3 sm:!right-4;
+}
+
+.carouselThree .swiper-pagination,
+.carouselFour .swiper-pagination {
+  @apply !bottom-3 !left-1/2 inline-flex !w-auto -translate-x-1/2 items-center gap-1.5 rounded-[40px] border-[0.5px] border-white/10 bg-white/60 px-2 py-1.5 shadow-slider-navigation backdrop-blur-[10px] sm:!bottom-5;
+}
+
+.carouselThree .swiper-pagination-bullet,
+.carouselFour .swiper-pagination-bullet {
+  @apply !m-0 h-2.5 w-2.5 bg-white opacity-100 shadow-theme-xs duration-200 ease-in-out;
+}
+
+.carouselThree .swiper-pagination-bullet-active,
+.carouselFour .swiper-pagination-bullet-active {
+  @apply w-6.5 rounded-xl;
+}
+
+.form-check-input:checked ~ span {
+  @apply border-[6px] border-brand-500 bg-brand-500 dark:border-brand-500;
+}
+
+.taskCheckbox:checked ~ .box span {
+  @apply opacity-100 bg-brand-500;
+}
+.taskCheckbox:checked p {
+  @apply text-gray-400 line-through;
+}
+.taskCheckbox:checked ~ .box {
+  @apply border-brand-500 bg-brand-500 dark:border-brand-500;
+}
+
+.task {
+  transition: all 0.2s ease; /* Smooth transition for visual effects */
+}
+
+.task {
+  border-radius: 0.75rem;
+  box-shadow: 0px 1px 3px 0px rgba(16, 24, 40, 0.1),
+    0px 1px 2px 0px rgba(16, 24, 40, 0.06);
+  opacity: 0.8;
+  cursor: grabbing; /* Changes the cursor to indicate dragging */
+}
+
+.custom-calendar .fc-h-event {
+  background-color: transparent;
+  border: none;
+  color: black;
+}
+.fc.fc-media-screen {
+  @apply min-h-screen;
+}
+
+.simplebar-scrollbar:before {
+  @apply bg-gray-200 rounded-full dark:bg-gray-700 opacity-100 !important;
+}
+
+.simplebar-scrollbar.simplebar-visible:before {
+  @apply opacity-100;
+}

@@ -1,0 +1,234 @@
+/* Add this to your static/css/style.css or create a new profile.css file */
+
+/* Profile Picture Styles */
+.profile-picture-container {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-picture-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.profile-picture-container:hover .profile-picture-overlay {
+    opacity: 1;
+}
+
+/* Achievement Badges */
+.achievement-badge {
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.achievement-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Rank Display */
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    animation: rankPulse 2s infinite;
+}
+
+@keyframes rankPulse {
+    0%, 100% {
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    50% {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* Theme Color Pickers */
+.color-picker-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.color-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.color-preview:hover {
+    transform: scale(1.1);
+}
+
+/* Profile Card Customization */
+.profile-card-custom {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile-card-custom:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Progress Bar Animation */
+.progress-bar {
+    transition: width 1s ease-in-out;
+}
+
+/* Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-item i {
+    font-size: 24px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.stat-item .stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    display: block;
+    margin: 5px 0;
+}
+
+.stat-item .stat-label {
+    font-size: 12px;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+/* Findings Timeline */
+.finding-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.finding-timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ddd;
+}
+
+.finding-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.finding-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 10px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #3498db;
+    z-index: 1;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-picture-container img,
+    .profile-picture-container > div {
+        width: 120px !important;
+        height: 120px !important;
+    }
+}
+
+/* Theme Preview in Edit Profile */
+.theme-preview-card {
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.theme-preview-card:hover {
+    border-color: #3498db;
+    transform: scale(1.02);
+}
+
+/* Rank Level Indicator */
+.rank-level-dots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.rank-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ddd;
+    transition: all 0.3s ease;
+}
+
+.rank-dot.active {
+    background: #3498db;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+/* Finding Card with Coordinates */
+.finding-card {
+    border-left-width: 4px;
+    border-left-style: solid;
+    transition: all 0.3s ease;
+}
+
+.finding-card:hover {
+    transform: translateX(5px);
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.coordinates-badge {
+    font-family: 'Courier New', monospace;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <!-- Header -->
+    <header class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <a href="{{ url_for('home') }}" class="text-3xl font-extrabold text-blue-600">Xplora</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('feed') }}" class="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-home text-xl text-gray-700"></i>
+                </a>
+                <a href="{{ url_for('profile', username=current_user.username) }}" class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded-full">
+                    <img src="{{ url_for('static', filename='Uploads/' + current_user.profile_pic) if current_user.profile_pic and current_user.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" alt="Profile" class="w-8 h-8 rounded-full border border-gray-300">
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Archaeological Map View</h2>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div id="archaeonet-map" class="w-full h-96 rounded-lg border border-gray-300 mb-4"></div>
+            
+            <div class="mt-4">
+                <a href="{{ url_for('create_finding') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                    <i class="fas fa-plus-circle mr-2"></i> Add New Finding
+                </a>
+            </div>
+
+            <!-- Findings List -->
+            {% if findings %}
+            <div class="mt-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Recent Findings</h3>
+                <div class="space-y-3">
+                    {% for finding in findings %}
+                    <div class="border-l-4 p-3 rounded bg-gray-50" style="border-color: {{ finding.discoverer.theme_color or '#3498db' }};">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <img src="{{ url_for('static', filename='Uploads/' + finding.discoverer.profile_pic) if finding.discoverer.profile_pic and finding.discoverer.profile_pic != 'default.png' else 'https://placehold.co/32x32' }}" alt="Profile" class="w-8 h-8 rounded-full">
+                                <span class="font-semibold">{{ finding.discoverer.username }}</span>
+                            </div>
+                            <span class="text-sm text-gray-500">{{ finding.timestamp.strftime('%B %d, %Y') }}</span>
+                        </div>
+                        <p class="text-gray-700 mb-2">{{ finding.description }}</p>
+                        <div class="text-sm text-gray-600">
+                            <i class="fas fa-map-marker-alt"></i> 
+                            <span class="font-mono">{{ finding.latitude }}, {{ finding.longitude }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<!-- Add Leaflet CSS and JS for the map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<script>
+    // Initialize map
+    var map = L.map('archaeonet-map').setView([0, 0], 2);
+    
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Add findings as markers
+    {% for finding in findings %}
+        L.marker([{{ finding.latitude }}, {{ finding.longitude }}])
+            .addTo(map)
+            .bindPopup('<b>Finding by {{ finding.discoverer.username }}</b><br>{{ finding.description }}');
+    {% endfor %}
+</script>
+{% endblock %}

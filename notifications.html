@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-300 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="{{ url_for('home') }}" class="text-3xl font-bold text-blue-600">Xplora</a>
+            </div>
+            
+            <div class="flex-1 max-w-xl mx-8">
+                <div class="relative">
+                    <input type="text" placeholder="Search ArchaeoNet..." 
+                           class="w-full pl-12 pr-6 py-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-700 placeholder-gray-500">
+                    <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg"></i>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <a href="{{ url_for('feed') }}" class="p-3 rounded-full hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-home text-2xl text-gray-600"></i>
+                </a>
+                <a href="{{ url_for('notifications') }}" class="p-3 rounded-full bg-blue-100 transition-colors">
+                    <i class="fas fa-bell text-2xl text-blue-600"></i>
+                </a>
+                <a href="{{ url_for('profile', username=current_user.username) }}" 
+                   class="flex items-center space-x-3 p-2 hover:bg-gray-200 rounded-full transition-colors ml-2">
+                    <img src="{{ url_for('static', filename='Uploads/' + current_user.profile_pic) if current_user.profile_pic and current_user.profile_pic != 'default.png' else 'https://placehold.co/48x48' }}" 
+                         alt="Profile" 
+                         class="w-12 h-12 rounded-full border-2 border-gray-300">
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-4xl mx-auto px-6 py-8">
+        <!-- Page Header -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-bell text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Notifications</h1>
+                        <p class="text-gray-600 text-lg">Stay updated with your archaeological network</p>
+                    </div>
+                </div>
+                
+                {% if notifications %}
+                <button onclick="markAllAsRead()" 
+                        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg">
+                    <i class="fas fa-check-double mr-2"></i>Mark All Read
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        {% if notifications or pending_requests %}
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <!-- show friend requests first if any -->
+                {% if pending_requests %}
+                <div class="bg-blue-50 border-b-4 border-blue-500 p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-user-friends text-blue-600 mr-2"></i>
+                        Pending Friend Requests ({{ pending_requests|length }})
+                    </h3>
+                    <div class="space-y-3">
+                        {% for request in pending_requests %}
+                        <div class="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm">
+                            <div class="flex items-center space-x-4">
+                                <img src="{{ url_for('static', filename='Uploads/' + request.user.profile_pic) if request.user.profile_pic and request.user.profile_pic != 'default.png' else 'https://placehold.co/48x48' }}" 
+                                     alt="{{ request.user.username }}" 
+                                     class="w-12 h-12 rounded-full border-2 border-blue-500">
+                                <div>
+                                    <p class="font-bold text-gray-900">{{ request.user.username }}</p>
+                                    <p class="text-sm text-gray-500">wants to be friends</p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <form method="POST" action="{{ url_for('accept_friend', friendship_id=request.id) }}">
+                                    <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg">
+                                        Accept
+                                    </button>
+                                </form>
+                                <a href="{{ url_for('profile', username=request.user.username) }}" 
+                                   class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-lg">
+                                    View Profile
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- regular notifications below -->
+                {% for notif in notifications %}
+                <div class="notification-item border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-all duration-200 {% if not notif.read %}bg-blue-50{% endif %}">
+                    <div class="p-6 flex items-start space-x-4">
+                        <!-- Icon based on notification type -->
+                        <div class="flex-shrink-0">
+                            {% if 'liked your post' in notif.content %}
+                                <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-thumbs-up text-blue-600 text-xl"></i>
+                                </div>
+                            {% elif 'commented on' in notif.content %}
+                                <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-comment text-green-600 text-xl"></i>
+                                </div>
+                            {% elif 'friend request' in notif.content %}
+                                <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user-plus text-purple-600 text-xl"></i>
+                                </div>
+                            {% elif 'accepted' in notif.content %}
+                                <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user-check text-green-600 text-xl"></i>
+                                </div>
+                            {% elif 'message' in notif.content %}
+                                <div class="w-14 h-14 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-envelope text-yellow-600 text-xl"></i>
+                                </div>
+                            {% else %}
+                                <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-bell text-gray-600 text-xl"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Notification Content -->
+                        <div class="flex-1 min-w-0">
+                            <p class="text-gray-900 text-lg font-medium mb-2">{{ notif.content }}</p>
+                            <div class="flex items-center space-x-4 text-sm">
+                                <span class="text-gray-500 flex items-center">
+                                    <i class="far fa-clock mr-2"></i>
+                                    {{ notif.timestamp.strftime('%B %d, %Y at %H:%M') }}
+                                </span>
+                                {% if not notif.read %}
+                                <span class="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
+                                    NEW
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex-shrink-0 flex space-x-2">
+                            {% if 'message' in notif.content %}
+                                {% set username = notif.content.split('message from ')[1].rstrip('!') if 'message from' in notif.content else '' %}
+                                {% if username %}
+                                <!-- figure out user id from username - kinda hacky but works -->
+                                {% set msg_user = notif.content.split('from ')[1].split('!')[0] %}
+                                <a href="{{ url_for('messages', user_id=notif.user_id) }}" 
+                                   class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all">
+                                    Reply
+                                </a>
+                                {% endif %}
+                            {% endif %}
+                            
+                            <button onclick="dismissNotification({{ notif.id }})" 
+                                    class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination (if needed) -->
+            {% if notifications|length > 20 %}
+            <div class="mt-6 flex justify-center space-x-2">
+                <button class="px-6 py-3 bg-white border-2 border-gray-200 hover:border-blue-500 text-gray-700 font-semibold rounded-xl transition-all">
+                    <i class="fas fa-chevron-left mr-2"></i>Previous
+                </button>
+                <button class="px-6 py-3 bg-white border-2 border-gray-200 hover:border-blue-500 text-gray-700 font-semibold rounded-xl transition-all">
+                    Next<i class="fas fa-chevron-right ml-2"></i>
+                </button>
+            </div>
+            {% endif %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+                <div class="w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-8">
+                    <i class="fas fa-bell-slash text-gray-400 text-5xl"></i>
+                </div>
+                <h3 class="text-3xl font-bold text-gray-800 mb-4">No notifications yet</h3>
+                <p class="text-xl text-gray-600 mb-8 max-w-md mx-auto">
+                    When you get likes, comments, or friend requests, they'll show up here
+                </p>
+                <div class="flex justify-center space-x-4">
+                    <a href="{{ url_for('feed') }}" 
+                       class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-home mr-2"></i>Go to Feed
+                    </a>
+                    <a href="{{ url_for('search_users') }}" 
+                       class="px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl transition-all transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-user-plus mr-2"></i>Find Friends
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function dismissNotification(notificationId) {
+        const notificationItem = event.target.closest('.notification-item');
+        
+        // Animate out
+        notificationItem.style.transform = 'translateX(100%)';
+        notificationItem.style.opacity = '0';
+        
+        setTimeout(() => {
+            notificationItem.remove();
+            
+            // Check if no notifications left
+            const remainingNotifications = document.querySelectorAll('.notification-item');
+            if (remainingNotifications.length === 0) {
+                location.reload();
+            }
+        }, 300);
+        
+        // TODO: Send AJAX request to mark as dismissed in backend
+        // fetch(`/notifications/${notificationId}/dismiss`, { method: 'POST' });
+    }
+
+    function markAllAsRead() {
+        const unreadNotifications = document.querySelectorAll('.notification-item.bg-blue-50');
+        
+        unreadNotifications.forEach((notif, index) => {
+            setTimeout(() => {
+                notif.classList.remove('bg-blue-50');
+                notif.classList.add('bg-white');
+                
+                const newBadge = notif.querySelector('span.bg-blue-600');
+                if (newBadge) {
+                    newBadge.style.opacity = '0';
+                    setTimeout(() => newBadge.remove(), 300);
+                }
+            }, index * 50);
+        });
+        
+        // Hide the "Mark All Read" button
+        const markAllBtn = document.querySelector('button[onclick="markAllAsRead()"]');
+        if (markAllBtn) {
+            markAllBtn.style.opacity = '0';
+            setTimeout(() => markAllBtn.remove(), 300);
+        }
+        
+        // TODO: Send AJAX request to backend
+        // fetch('/notifications/mark-all-read', { method: 'POST' });
+    }
+
+    // Add smooth transitions
+    document.addEventListener('DOMContentLoaded', function() {
+        const notifications = document.querySelectorAll('.notification-item');
+        notifications.forEach((notif, index) => {
+            notif.style.opacity = '0';
+            notif.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                notif.style.transition = 'all 0.3s ease-out';
+                notif.style.opacity = '1';
+                notif.style.transform = 'translateY(0)';
+            }, index * 50);
+        });
+    });
+
+    // Auto-dismiss notifications after clicking action buttons
+    document.querySelectorAll('.notification-item a').forEach(link => {
+        link.addEventListener('click', function() {
+            const notificationItem = this.closest('.notification-item');
+            notificationItem.style.opacity = '0.5';
+        });
+    });
+</script>
+
+<style>
+    .notification-item {
+        transition: all 0.3s ease-out;
+        position: relative;
+    }
+    
+    .notification-item:hover {
+        transform: translateX(4px);
+        box-shadow: -4px 0 0 0 #3b82f6;
+    }
+    
+    .notification-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: transparent;
+        transition: background 0.3s ease;
+    }
+    
+    .notification-item:hover::before {
+        background: #3b82f6;
+    }
+    
+    /* Unread notification indicator */
+    .notification-item.bg-blue-50::before {
+        background: #3b82f6;
+    }
+    
+    /* Smooth fade transitions */
+    .notification-item * {
+        transition: opacity 0.3s ease;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<!--
+	Dimension by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Xplora</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}" />
+		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='assets/css/noscript.css') }}" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<div class="logo">
+							<span class="icon fa-gem"></span>
+						</div>
+						<div class="content">
+							<div class="inner">
+								<h1>Xplora</h1>
+								<p>A social network for archaeologists with maps for findings.</p>
+							</div>
+						</div>
+						<nav>
+							<ul>
+								{% if current_user.is_authenticated %}
+									<li><a href="{{ url_for('feed') }}">Feed</a></li>
+									<li><a href="{{ url_for('map_view') }}">Map</a></li>
+									<li><a href="{{ url_for('messages', user_id=current_user.id) }}">Messages</a></li>
+									<li><a href="{{ url_for('profile', username=current_user.username) }}">Profile</a></li>
+									<li><a href="{{ url_for('logout') }}">Logout</a></li>
+								{% else %}
+									<li><a href="{{ url_for('login') }}">Login</a></li>
+									<li><a href="{{ url_for('register') }}">Register</a></li>
+								{% endif %}
+							</ul>
+						</nav>
+					</header>
+
+				<!-- Main -->
+					<div id="main">
+						{% if current_user.is_authenticated %}
+							<article id="intro">
+								<h2 class="major">Welcome Back</h2>
+								<span class="image main"><img src="{{ url_for('static', filename='images/pic01.jpg') }}" alt="" /></span>
+								<p>Explore your archaeological network.</p>
+							</article>
+						{% endif %}
+					</div>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<p class="copyright">&copy; Xplora. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+					</footer>
+
+			</div>
+
+		<!-- BG -->
+			<div id="bg"></div>
+
+		<!-- Scripts -->
+			<script src="{{ url_for('static', filename='assets/js/jquery.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='assets/js/browser.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='assets/js/breakpoints.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='assets/js/util.js') }}"></script>
+			<script src="{{ url_for('static', filename='assets/js/main.js') }}"></script>
+
+	</body>
+</html>

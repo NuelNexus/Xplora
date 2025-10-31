@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen bg-gray-100 text-gray-900">
+    <header class="fixed top-0 left-0 right-0 bg-white shadow-md z-50 h-14 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <a href="{{ url_for('home') }}" class="text-3xl font-extrabold text-blue-600">ArchaeoNet</a>
+                <div class="relative hidden lg:block">
+                    <input type="text" placeholder="Search ArchaeoNet..." class="pl-10 pr-4 py-1 rounded-full bg-gray-100 text-gray-900 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-64">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-12 h-full">
+                <a href="{{ url_for('feed') }}" class="h-full flex items-center px-4 hover:bg-gray-100 border-b-4 border-transparent hover:border-blue-600 transition-all">
+                    <i class="fas fa-home text-2xl text-gray-500 hover:text-blue-600"></i>
+                </a>
+                <a href="{{ url_for('map_view') }}" class="h-full flex items-center px-4 hover:bg-gray-100 border-b-4 border-transparent hover:border-blue-600 transition-all">
+                    <i class="fas fa-map text-2xl text-gray-500 hover:text-blue-600"></i>
+                </a>
+                <a href="{{ url_for('search_users') }}" class="h-full flex items-center px-4 hover:bg-gray-100 border-b-4 border-transparent hover:border-blue-600 transition-all">
+                    <i class="fas fa-users text-2xl text-gray-500 hover:text-blue-600"></i>
+                </a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('notifications') }}" class="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors relative">
+                    <i class="fas fa-bell text-xl text-gray-700"></i>
+                    {% if notifications and notifications > 0 %}
+                    <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ notifications }}</span>
+                    {% endif %}
+                </a>
+                <div class="h-8 w-px bg-gray-300"></div>
+                <a href="{{ url_for('profile', username=current_user.username) }}" class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded-full">
+                    <img src="{{ url_for('static', filename='Uploads/' + current_user.profile_pic) if current_user.profile_pic and current_user.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" alt="Profile" class="w-8 h-8 rounded-full border border-gray-300">
+                </a>
+                <a href="{{ url_for('logout') }}" class="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-sign-out-alt text-xl text-gray-700"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto pt-16 px-4 flex justify-center">
+        <aside class="w-1/5 hidden lg:block pr-6">
+            <div class="sticky top-16 pt-6 space-y-2">
+                <a href="{{ url_for('profile', username=current_user.username) }}" class="flex items-center space-x-3 p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                    <img src="{{ url_for('static', filename='Uploads/' + current_user.profile_pic) if current_user.profile_pic and current_user.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" alt="Profile" class="w-9 h-9 rounded-full">
+                    <div class="font-semibold">{{ current_user.username }}</div>
+                </a>
+                <a href="{{ url_for('feed') }}" class="flex items-center space-x-3 p-2 hover:bg-gray-200 rounded-lg transition-colors text-blue-600 font-medium">
+                    <i class="fas fa-stream text-xl w-6 text-center"></i> <span>Feed</span>
+                </a>
+                <a href="{{ url_for('map_view') }}" class="flex items-center space-x-3 p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                    <i class="fas fa-map-marked-alt text-xl w-6 text-center"></i> <span>Map & Findings</span>
+                </a>
+                <a href="{{ url_for('notifications') }}" class="flex items-center space-x-3 p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                    <i class="fas fa-bell text-xl w-6 text-center"></i> <span>Notifications</span>
+                </a>
+                <a href="{{ url_for('search_users') }}" class="flex items-center space-x-3 p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                    <i class="fas fa-search text-xl w-6 text-center"></i> <span>Find Friends</span>
+                </a>
+            </div>
+        </aside>
+
+        <section class="w-full md:w-3/5 lg:w-3/5 max-w-xl px-2 md:px-4 space-y-4 pt-6">
+            
+            {% if posts %}
+            <!-- Create Post Box -->
+            <div class="bg-white rounded-lg shadow-md p-4">
+                <div class="flex items-center space-x-3 border-b pb-3 border-gray-200">
+                    <img src="{{ url_for('static', filename='Uploads/' + current_user.profile_pic) if current_user.profile_pic and current_user.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" alt="Profile" class="w-10 h-10 rounded-full">
+                    <form method="POST" class="flex-1 w-full">
+                        {{ post_form.hidden_tag() if post_form else '' }}
+                        {{ post_form.content(class="w-full p-2 rounded-full bg-gray-100 text-gray-900 placeholder-gray-500 focus:outline-none hover:bg-gray-200", placeholder="What's on your archaeological mind?") if post_form else '' }}
+                    </form>
+                </div>
+                {% if post_form %}
+                <div class="flex justify-between items-center pt-3">
+                    <button type="submit" form="post_form" class="flex items-center space-x-2 text-gray-600 hover:bg-gray-100 p-2 rounded-lg transition-colors">
+                        <i class="fas fa-paper-plane text-lg text-blue-500"></i>
+                        <span class="font-medium text-sm hidden sm:inline">Post</span>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Posts -->
+            {% for post in posts %}
+            <div class="bg-white rounded-lg shadow-md p-4">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ url_for('static', filename='Uploads/' + post.author.profile_pic) if post.author.profile_pic and post.author.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" alt="Profile" class="w-10 h-10 rounded-full">
+                        <div>
+                            <div class="font-semibold hover:underline cursor-pointer">{{ post.author.username }}</div>
+                            <div class="text-xs text-gray-500">{{ post.timestamp.strftime('%B %d at %H:%M') }} · <i class="fas fa-globe-americas"></i></div>
+                        </div>
+                    </div>
+                    <i class="fas fa-ellipsis-h text-gray-500 hover:bg-gray-100 p-2 rounded-full cursor-pointer"></i>
+                </div>
+                
+                <p class="mb-3">{{ post.content }}</p>
+
+                <div class="flex justify-between items-center text-gray-500 text-sm border-b pb-2 border-gray-200">
+                    <div class="flex items-center space-x-1">
+                        <i class="fas fa-thumbs-up text-blue-600"></i>
+                        <span>{{ post.likes|length }}</span>
+                    </div>
+                    <span>{{ post.comments|length }} Comments</span>
+                </div>
+
+                <div class="flex justify-around items-center pt-2">
+                    <form method="POST" action="{{ url_for('like_post', post_id=post.id) }}" class="w-1/3">
+                        <button type="submit" class="flex items-center justify-center space-x-2 text-gray-700 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold">
+                            <i class="fas fa-thumbs-up mr-1"></i> <span>Like</span>
+                        </button>
+                    </form>
+                    <button class="flex items-center justify-center space-x-2 text-gray-700 w-1/3 p-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold">
+                        <i class="fas fa-comment mr-1"></i> <span>Comment</span>
+                    </button>
+                    <button class="flex items-center justify-center space-x-2 text-gray-700 w-1/3 p-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold">
+                        <i class="fas fa-share mr-1"></i> <span>Share</span>
+                    </button>
+                </div>
+
+                <div class="mt-4 space-y-2">
+                    {% for comment in post.comments[:2] %}
+                    <div class="flex items-start">
+                        <img src="{{ url_for('static', filename='Uploads/' + comment.author.profile_pic) if comment.author.profile_pic and comment.author.profile_pic != 'default.png' else 'https://placehold.co/32x32' }}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                        <div class="bg-gray-100 p-2 rounded-xl">
+                            <div class="font-semibold text-sm hover:underline cursor-pointer">{{ comment.author.username }}</div>
+                            <p class="text-sm">{{ comment.content }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}" class="flex items-center mt-2">
+                        <img src="{{ url_for('static', filename='Uploads/' + current_user.profile_pic) if current_user.profile_pic and current_user.profile_pic != 'default.png' else 'https://placehold.co/32x32' }}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                        <input type="text" name="content" class="flex-1 p-2 rounded-full bg-gray-100 text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm" placeholder="Write a comment...">
+                        <button type="submit" class="hidden"></button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if user %}
+            <!-- User Profile View -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="text-center">
+                    {% if user.profile_pic and user.profile_pic != 'default.png' %}
+                        <img src="{{ url_for('static', filename='Uploads/' + user.profile_pic) }}" 
+                             alt="Profile Picture" 
+                             class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4" 
+                             style="border-color: {{ user.theme_color }};">
+                    {% else %}
+                        <div class="w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center text-5xl font-bold border-4" 
+                             style="background-color: {{ user.theme_color }}; color: white; border-color: {{ user.theme_color }};">
+                            {{ user.username[0].upper() }}
+                        </div>
+                    {% endif %}
+                    
+                    <h2 class="text-3xl font-bold mb-2">{{ user.username }}</h2>
+                    
+                    <div class="mb-4">
+                        <span class="inline-block px-4 py-2 rounded-full font-semibold" style="background-color: {{ user.theme_color }}; color: white;">
+                            <i class="fas fa-medal"></i> {{ user.rank_title }} (Level {{ user.rank_level }})
+                        </span>
+                    </div>
+                    
+                    <p class="text-gray-600 mb-4">{{ user.bio or 'No bio yet' }}</p>
+                    
+                    {% if user.id == current_user.id %}
+                        <a href="{{ url_for('edit_profile') }}" class="inline-block px-6 py-2 rounded-lg text-white font-semibold" style="background-color: {{ user.theme_color }};">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <div class="text-2xl font-bold">{{ user.posts|length }}</div>
+                        <div class="text-gray-600 text-sm">Posts</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold">{{ user.findings|length }}</div>
+                        <div class="text-gray-600 text-sm">Findings</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold">{{ user.friends|selectattr('accepted', 'equalto', True)|list|length }}</div>
+                        <div class="text-gray-600 text-sm">Friends</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if results %}
+            <!-- Search Results -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-4">Search Results</h2>
+                {% for result_user in results %}
+                <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ url_for('static', filename='Uploads/' + result_user.profile_pic) if result_user.profile_pic and result_user.profile_pic != 'default.png' else 'https://placehold.co/40x40' }}" alt="Profile" class="w-12 h-12 rounded-full">
+                        <div>
+                            <a href="{{ url_for('profile', username=result_user.username) }}" class="font-semibold hover:underline">{{ result_user.username }}</a>
+                            <div class="text-sm text-gray-600">{{ result_user.rank_title }}</div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('profile', username=result_user.username) }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        View Profile
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if findings %}
+            <!-- Map View with Findings -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-4">Archaeological Findings Map</h2>
+                <div id="map" class="w-full h-96 bg-gray-200 rounded-lg mb-4"></div>
+                
+                <div class="space-y-3">
+                    {% for finding in findings %}
+                    <div class="border-l-4 p-3 rounded bg-gray-50" style="border-color: {{ finding.discoverer.theme_color }};">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <img src="{{ url_for('static', filename='Uploads/' + finding.discoverer.profile_pic) if finding.discoverer.profile_pic and finding.discoverer.profile_pic != 'default.png' else 'https://placehold.co/32x32' }}" alt="Profile" class="w-8 h-8 rounded-full">
+                                <span class="font-semibold">{{ finding.discoverer.username }}</span>
+                            </div>
+                            <span class="text-sm text-gray-500">{{ finding.timestamp.strftime('%B %d, %Y') }}</span>
+                        </div>
+                        <p class="text-gray-700 mb-2">{{ finding.description }}</p>
+                        <div class="text-sm text-gray-600">
+                            <i class="fas fa-map-marker-alt"></i> 
+                            <span class="font-mono">{{ finding.latitude }}, {{ finding.longitude }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('create_finding') }}" class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
+                        <i class="fas fa-plus"></i> Add New Finding
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if form and request.endpoint == 'create_finding' %}
+            <!-- Create Finding Form -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-4">Add New Finding</h2>
+                <form method="POST" class="space-y-4">
+                    {{ form.hidden_tag() }}
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.description.label }}</label>
+                        {{ form.description(class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500", rows="4") }}
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.latitude.label }}</label>
+                            {{ form.latitude(class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500") }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.longitude.label }}</label>
+                            {{ form.longitude(class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500") }}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        {{ form.submit(class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold") }}
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+        </section>
+
+        <aside class="w-1/5 hidden lg:block pl-6">
+            <div class="sticky top-16 pt-6 space-y-4">
+                <div class="bg-white rounded-lg p-4 shadow-md">
+                    <h3 class="font-semibold text-gray-600 mb-3">Quick Stats</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>Your Findings:</span>
+                            <span class="font-bold">{{ current_user.findings|length }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Your Rank:</span>
+                            <span class="font-bold">{{ current_user.rank_title }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-xs text-gray-500 mt-4 space-y-1">
+                    <p>Privacy · Terms · Advertising · Cookies</p>
+                    <p>Xplora © 2025</p>
+                </div>
+            </div>
+        </aside>
+    </main>
+</div>
+
+<script>
+    // Like button functionality
+    document.querySelectorAll('form[action*="like_post"]').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const response = await fetch(form.action, { method: 'POST' });
+            const data = await response.json();
+            // Update like count
+            const likeCount = form.closest('.bg-white').querySelector('.fa-thumbs-up').nextElementSibling;
+            if (likeCount) likeCount.textContent = data.likes;
+        });
+    });
+</script>
+{% endblock %}

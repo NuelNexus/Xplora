@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Xplora{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/xplora_logo.png') }}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Bootstrap CSS (for forms and components) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    {% if current_user.is_authenticated %}
+    <style>
+        :root {
+            --theme-color: {{ current_user.theme_color or '#3498db' }};
+            --bg-color: {{ current_user.bg_color or '#ecf0f1' }};
+            --text-color: {{ current_user.text_color or '#2c3e50' }};
+        }
+    </style>
+    {% endif %}
+    
+    <style>
+    /* post card animation stuff */
+    .post-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .post-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* like button animation when clicked */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .like-pulse {
+        animation: pulse 0.3s ease-in-out;
+    }
+    
+    /* smooth scroll */
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    /* button gradient style */
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .text-shadow-sm {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Chatbot Animations */
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+    }
+
+    .chatbot-float {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* Smooth scroll for chat */
+    #chatbot-messages {
+        scroll-behavior: smooth;
+    }
+
+    /* Custom scrollbar for chat */
+    #chatbot-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #chatbot-messages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    #chatbot-messages::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+
+    #chatbot-messages::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    
+    /* background patterns - only show if user picks pattern option */
+    {% if current_user.is_authenticated and current_user.site_bg_type == 'pattern' %}
+        {% if current_user.site_bg_pattern == 'dots' %}
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+            background-image: radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        {% elif current_user.site_bg_pattern == 'grid' %}
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+            background-image: 
+                linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        {% elif current_user.site_bg_pattern == 'diagonal' %}
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+            background-image: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(0, 0, 0, 0.05) 10px,
+                rgba(0, 0, 0, 0.05) 20px
+            );
+        }
+        {% elif current_user.site_bg_pattern == 'waves' %}
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+            background-image: 
+                repeating-radial-gradient(
+                    circle at 0 0,
+                    transparent 0,
+                    rgba(0, 0, 0, 0.05) 10px,
+                    transparent 20px
+                );
+        }
+        {% elif current_user.site_bg_pattern == 'bricks' %}
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+            background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px), 
+                             linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+            background-size: 50px 30px;
+            background-position: 0 0, 25px 15px;
+        }
+        {% elif current_user.site_bg_pattern == 'zigzag' %}
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+            background-image: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 25%, transparent 25%), 
+                             linear-gradient(225deg, rgba(0, 0, 0, 0.05) 25%, transparent 25%);
+            background-size: 20px 20px;
+        }
+        {% endif %}
+    {% endif %}
+
+    /* make sure content shows above pattern */
+    body {
+        position: relative;
+        z-index: 1;
+    }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body style="
+    {% if current_user.is_authenticated %}
+        {% if current_user.site_bg_type == 'color' %}
+            background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+        {% elif current_user.site_bg_type == 'gradient' %}
+            background: linear-gradient(135deg, {{ current_user.site_bg_gradient_start or '#f3f4f6' }}, {{ current_user.site_bg_gradient_end or '#e5e7eb' }});
+            background-attachment: fixed;
+        {% elif current_user.site_bg_type == 'image' and current_user.site_bg_image %}
+            background-image: url('{{ url_for('static', filename='Uploads/' + current_user.site_bg_image) }}');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+        {% elif current_user.site_bg_type == 'pattern' %}
+            background-color: {{ current_user.site_bg_color or '#f3f4f6' }};
+        {% else %}
+            background-color: #f3f4f6;
+        {% endif %}
+    {% else %}
+        background-color: #f3f4f6;
+    {% endif %}
+">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content Block -->
+    {% block content %}{% endblock %}
+
+    <!-- AI Chatbot Widget -->
+    <div id="chatbot-widget" class="fixed bottom-6 right-6 z-50">
+        <!-- Chat Button -->
+        <button id="chatbot-toggle" 
+                class="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-2xl flex items-center justify-center text-white hover:scale-110 transition-all duration-300 group">
+            <i class="fas fa-robot text-2xl"></i>
+            <span class="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-xs font-bold animate-pulse">
+                AI
+            </span>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chatbot-window" class="hidden absolute bottom-20 right-0 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col">
+            <!-- Chat Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-t-2xl text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                            <i class="fas fa-robot text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">ArchaeoBot</h3>
+                            <p class="text-blue-100 text-sm">Online • Ready to explore!</p>
+                        </div>
+                    </div>
+                    <button id="chatbot-close" class="p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chatbot-messages" class="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
+                <!-- Welcome Message -->
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div class="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm border border-gray-200 max-w-[80%]">
+                        <p class="text-gray-800">Hey there, explorer! 🗿 I'm ArchaeoBot, your AI assistant for all things archaeology and Xplora! How can I help you dig up some knowledge today?</p>
+                        <div class="mt-2 text-xs text-gray-500">Just now</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <button onclick="sendQuickQuestion('Explain site navigation')" 
+                            class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-xl text-sm transition-colors">
+                        🧭 Site Guide
+                    </button>
+                    <button onclick="sendQuickQuestion('Archaeology research tips')" 
+                            class="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-2 rounded-xl text-sm transition-colors">
+                        🔍 Research Help
+                    </button>
+                    <button onclick="sendQuickQuestion('Schedule a post')" 
+                            class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-2 rounded-xl text-sm transition-colors">
+                        📅 Post Scheduler
+                    </button>
+                    <button onclick="sendQuickQuestion('Fun archaeology fact')" 
+                            class="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-2 rounded-xl text-sm transition-colors">
+                        💡 Fun Fact
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
+                <div class="flex space-x-2">
+                    <input type="text" 
+                           id="chatbot-input" 
+                           placeholder="Ask about archaeology, site features, or research..."
+                           class="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           maxlength="500">
+                    <button id="chatbot-send" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition-colors">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="text-xs text-gray-500 mt-2 text-center">
+                    Powered by AI • ArchaeoBot v1.0
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts -->
+    <script>
+        // auto hide flash messages after 5 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+
+        // Chatbot functionality
+        let isChatbotOpen = false;
+        let chatHistory = [];
+
+        // Toggle chatbot window
+        document.getElementById('chatbot-toggle').addEventListener('click', function() {
+            const chatWindow = document.getElementById('chatbot-window');
+            isChatbotOpen = !isChatbotOpen;
+            
+            if (isChatbotOpen) {
+                chatWindow.classList.remove('hidden');
+                document.getElementById('chatbot-input').focus();
+            } else {
+                chatWindow.classList.add('hidden');
+            }
+        });
+
+        // Close chatbot
+        document.getElementById('chatbot-close').addEventListener('click', function() {
+            document.getElementById('chatbot-window').classList.add('hidden');
+            isChatbotOpen = false;
+        });
+
+        // Send message function
+        async function sendMessage() {
+            const input = document.getElementById('chatbot-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessageToChat(message, 'user');
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/chatbot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        history: chatHistory
+                    })
+                });
+                
+                const data = await response.json();
+                hideTypingIndicator();
+                
+                if (data.success) {
+                    addMessageToChat(data.response, 'bot');
+                    // Update chat history (keep last 10 messages for context)
+                    chatHistory.push({ role: 'user', content: message });
+                    chatHistory.push({ role: 'assistant', content: data.response });
+                    if (chatHistory.length > 20) {
+                        chatHistory = chatHistory.slice(-20);
+                    }
+                } else {
+                    addMessageToChat("Oops! I'm having trouble connecting to my ancient knowledge banks. Try again in a moment! 🏺", 'bot');
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                addMessageToChat("Yikes! The archaeological spirits are causing interference. Please try again! 🔮", 'bot');
+            }
+        }
+
+        // Quick question function
+        function sendQuickQuestion(question) {
+            document.getElementById('chatbot-input').value = question;
+            sendMessage();
+        }
+
+        // Add message to chat UI
+        function addMessageToChat(message, sender) {
+            const messagesContainer = document.getElementById('chatbot-messages');
+            const messageDiv = document.createElement('div');
+            
+            if (sender === 'user') {
+                messageDiv.className = 'flex items-start space-x-3 justify-end';
+                messageDiv.innerHTML = `
+                    <div class="bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 py-3 shadow-sm max-w-[80%]">
+                        <p>${message}</p>
+                        <div class="text-xs text-blue-100 mt-1 text-right">Just now</div>
+                    </div>
+                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                `;
+            } else {
+                messageDiv.className = 'flex items-start space-x-3';
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div class="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm border border-gray-200 max-w-[80%]">
+                        <p class="text-gray-800">${message}</p>
+                        <div class="text-xs text-gray-500 mt-1">Just now</div>
+                    </div>
+                `;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Typing indicator
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatbot-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'flex items-start space-x-3';
+            typingDiv.innerHTML = `
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm border border-gray-200">
+                    <div class="flex space-x-1">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('chatbot-send').addEventListener('click', sendMessage);
+        document.getElementById('chatbot-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Auto-open chatbot for first-time users
+        document.addEventListener('DOMContentLoaded', function() {
+            const hasSeenChatbot = localStorage.getItem('hasSeenChatbot');
+            if (!hasSeenChatbot) {
+                setTimeout(() => {
+                    document.getElementById('chatbot-toggle').classList.add('animate-pulse');
+                }, 3000);
+                localStorage.setItem('hasSeenChatbot', 'true');
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
