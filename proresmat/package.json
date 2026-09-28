@@ -4,12 +4,15 @@
   "private": true,
   "description": "PRORESMAT Health Connect: supervised traditional-medicine marketplace (reference implementation)",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node server/server.js",
     "test": "node --test test/engine.test.mjs",
     "test:e2e": "node test/e2e-smoke.mjs && node test/e2e-flows.mjs",
-    "build": "node scripts/build-standalone.mjs"
+    "build": "node scripts/build-standalone.mjs",
+    "build:apk": "npm run build && python3 android/build_apk.py"
   },
   "devDependencies": {
     "esbuild": "0.25.10"

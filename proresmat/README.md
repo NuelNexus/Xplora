@@ -35,6 +35,23 @@ npm run build             # writes dist/proresmat-standalone.html
 Open `dist/proresmat-standalone.html` in a browser. The same engine runs inside the page and keeps data in
 the browser's IndexedDB, so each browser gets its own sandbox.
 
+### Android app (APK)
+
+`dist/proresmat.apk` is a native Android app (Android 7.0 or newer) that runs the same build fully on the
+phone, with data stored on the device. To install it, copy the file to the phone, open it, and allow
+installs from that source when Android asks.
+
+To rebuild it (needs a JDK and Python 3; no Android SDK or Gradle):
+
+```bash
+npm run build:apk          # writes dist/proresmat.apk
+```
+
+`android/build_apk.py` compiles `android/src`, converts it to DEX, encodes the binary manifest and resource
+table, zip-aligns and signs the APK. It downloads three jars from Maven Central on first run and creates a
+signing key at `android/keystore.p12`. Keep that key: Android only installs an update over an existing
+install when it is signed with the same key. The key is git-ignored and must not be committed.
+
 ## Test accounts
 
 Every account uses the password **`Demo@1234`**. Staff and supervisor accounts ask for a one-time code; in test

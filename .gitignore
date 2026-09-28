@@ -6,3 +6,6 @@
 !proresmat/**
 proresmat/data/
 proresmat/node_modules/
+proresmat/android/lib/
+proresmat/android/build/
+proresmat/android/keystore.p12
