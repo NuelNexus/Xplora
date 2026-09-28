@@ -47,7 +47,7 @@ const expectText = async (page, sel, re) => {
 const { page: c } = await open('akosua@demo.gh');
 await step('customer books a telephone consultation and pays by Mobile Money', async () => {
   await c.goto(base + '#/c/practitioner/prc_efua'); await settle(c);
-  await c.click('text=Book a consultation');
+  await c.click('.sticky-cta button');
   await c.click('[data-act=mode][data-v=telephone]'); await settle(c);
   await c.click('.slot:not([disabled])'); await settle(c);
   await c.fill('textarea[name=reason]', 'Lower back pain after farm work for one week.');
@@ -117,7 +117,7 @@ await step('customer switches language to Twi', async () => {
 const { page: p } = await open('kwame@demo.gh');
 await step('practitioner runs a consultation: start, notes, care plan, complete', async () => {
   await p.goto(base + '#/p/today'); await settle(p);
-  await p.click('main .list-item >> nth=0'); await settle(p);
+  await p.click('main [data-go^="#/p/consult/"] >> nth=0'); await settle(p);
   await p.click('[data-act=start]'); await settle(p);
   await p.fill('textarea[name=assessment]', 'Morning stiffness improving; no red flags.');
   await p.click('form[data-form=notes] button.primary'); await settle(p);

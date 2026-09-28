@@ -1,6 +1,7 @@
 // Customer environment: Home • Consult • Products • Orders • Profile
 import { route, S, go, api, toast, sheet, confirmSheet, refresh, closeSheets, envsFor, ENVS, signOut } from '../app.js';
 import {
+  ecard, qaTile, iconTile, pageHead, banner, statTile, greeting, pill,
   regLabel, html, raw, icon, money, fmtDate, fmtDay, fmtTime, fmtDateTime, words, cap, avatar, packArt, status, classBadge, sellerBadge, stars,
   empty, kv, section, tabs, emergency, field, input, textarea, select, check, when, readFileB64, idem, phone, esc,
 } from '../ui.js';
@@ -11,14 +12,21 @@ import { privacyNotice } from './auth.js';
 const modeIcon = { physical: 'pin', telephone: 'phone', video: 'video' };
 const modeLabel = { physical: 'In person', telephone: 'Telephone', video: 'Video' };
 
-const pracCard = (p) => html`<button type="button" class="card prac" data-go="#/c/practitioner/${p.id}">
-  ${avatar(p.avatar, 52, p.fullName)}
-  <span class="prac-main"><strong>${p.fullName}</strong><span class="small">${p.title}</span>${classBadge(p.providerClass)}
-  <span class="meta small">${icon('pin')}${p.location} · ${p.languages.join(', ')}</span>
-  <span class="meta small">${p.modes.map((m) => html`<span title="${modeLabel[m]}">${icon(modeIcon[m])}</span>`)} <b>${money(p.fee)}</b> · ${p.nextAvailable ? html`Next: ${fmtDay(p.nextAvailable)} ${fmtTime(p.nextAvailable)}` : 'No slots in the next 3 weeks'}</span>
-  ${stars(p.rating)}</span></button>`;
+const shortFee = (p) => 'GHS ' + (p / 100).toLocaleString('en-GH', { maximumFractionDigits: p % 100 ? 2 : 0 });
+const pracCard = (p) => ecard({
+  go: `#/c/practitioner/${p.id}`, lead: avatar(p.avatar, 56, p.fullName), title: p.fullName,
+  sub: `${p.title} • ${p.languages.slice(0, 2).join(', ')}`,
+  pill: classBadge(p.providerClass),
+  extra: html`<span class="meta small">${p.modes.map((m) => html`<span title="${modeLabel[m]}" aria-label="${modeLabel[m]}">${icon(modeIcon[m])}</span>`)}<span>${p.location}</span>${p.nextAvailable ? html`<span>· Next ${fmtDay(p.nextAvailable)}, ${fmtTime(p.nextAvailable)}</span>` : ''}</span>`,
+  aside: html`${shortFee(p.fee)}${p.rating?.avg ? html`<br>${stars(p.rating)}` : ''}`,
+});
 
-const productCard = (p) => html`<button type="button" class="card prod" data-go="#/c/product/${p.id}">${packArt(p.image, 64, p.name)}<span class="prod-main"><strong>${p.name}</strong><span class="small muted">${p.dosageForm} · ${p.packSize}</span>${sellerBadge(p.seller, p.sellerIsProresmat)}<span class="row between"><b>${money(p.price)}</b>${p.stock <= 5 ? html`<span class="small warn-text">Only ${p.stock} left</span>` : ''}</span></span></button>`;
+const productCard = (p) => ecard({
+  go: `#/c/product/${p.id}`, lead: packArt(p.image, 64, p.name), title: p.name,
+  sub: `${p.dosageForm} • ${p.packSize}`,
+  pill: sellerBadge(p.seller, p.sellerIsProresmat),
+  extra: html`<span class="row" style="gap:10px;margin-top:4px"><b class="price">${money(p.price)}</b>${p.stock <= 5 ? html`<span class="small warn-text">Only ${p.stock} left</span>` : ''}</span>`,
+});
 
 const disclaimer = () => html`<p class="muted small">Product information shows the approved indication only. Products support, and do not replace, care from a qualified practitioner.</p>`;
 
@@ -27,25 +35,23 @@ route('/c/home', async (ctx) => {
   ctx.title = 'PRORESMAT';
   const h = await api('home.get');
   ctx.form('search', (v) => go('#/c/search?q=' + encodeURIComponent(v.q || '')));
+  const first = S.user ? S.user.name.split(' ')[0] : '';
   return html`
-    <section class="hero">
-      <p class="eyebrow">${S.user ? `${t('greeting')}, ${S.user.name.split(' ')[0]}` : t('greeting')}</p>
-      <h2 class="display">${t('promise')}</h2>
-      <form class="search" data-form="search" role="search"><label class="sr-only" for="f-q">${t('search')}</label>${icon('search')}<input id="f-q" name="q" type="search" placeholder="${t('search')}" autocomplete="off"><button class="btn small primary">Search</button></form>
-    </section>
-    ${emergency(true)}
-    <div class="quick">
-      <button type="button" class="quick-btn primary" data-go="#/c/consult">${icon('consult')}<span><strong>${t('bookConsult')}</strong><span class="small">${h.counts.practitioners} verified practitioners</span></span></button>
-      <button type="button" class="quick-btn" data-go="#/c/products">${icon('leaf')}<span><strong>${t('shopProducts')}</strong><span class="small">${h.counts.products} products · ${h.counts.clinics} clinic${h.counts.clinics === 1 ? '' : 's'}</span></span></button>
-    </div>
-    ${when(h.upcoming || h.activeOrder, () => section(t('upcoming'), html`<div class="list">
-      ${h.upcoming ? html`<button type="button" class="list-item" data-go="#/c/booking/${h.upcoming.id}">${icon(modeIcon[h.upcoming.mode], 'lead')}<span class="li-main"><strong>${fmtDay(h.upcoming.start)}, ${fmtTime(h.upcoming.start)} GMT</strong><span class="small">${modeLabel[h.upcoming.mode]} consultation with ${h.upcoming.practitioner}</span></span>${status(h.upcoming.status)}</button>` : ''}
-      ${h.activeOrder ? html`<button type="button" class="list-item" data-go="#/c/order/${h.activeOrder.id}">${icon('truck', 'lead')}<span class="li-main"><strong>Order ${h.activeOrder.code}</strong><span class="small">${h.activeOrder.seller}</span></span>${status(h.activeOrder.status)}</button>` : ''}
+    ${pageHead(first ? `${greeting(Date.now() + (S.nowOffsetDays || 0) * 86400000)}, ${first}` : t('greeting'), 'Trusted traditional and integrative healthcare')}
+    <div class="emergency" role="note">${icon('alert')}<span>Not for emergencies. Seek urgent medical care for severe or life-threatening symptoms. Call <b>112</b> or <b>193</b>.</span></div>
+    <form class="search" data-form="search" role="search"><label class="sr-only" for="f-q">${t('search')}</label>${icon('search')}<input id="f-q" name="q" type="search" placeholder="Practitioners, clinics or products" autocomplete="off"><button class="search-go" aria-label="Search">${icon('back', 'flip')}</button></form>
+    ${section('Quick actions', html`<div class="quick">
+      ${qaTile('#/c/consult', 'plus', t('bookConsult'), 'Physical, phone or video')}
+      ${qaTile('#/c/products', 'leaf', 'Find products', 'Approved herbal products')}
+    </div>`)}
+    ${when(h.upcoming || h.activeOrder, () => section(t('upcoming'), html`<div class="stack">
+      ${h.upcoming ? ecard({ go: `#/c/booking/${h.upcoming.id}`, lead: iconTile(modeIcon[h.upcoming.mode], 'solid'), title: `${fmtDay(h.upcoming.start)}, ${fmtTime(h.upcoming.start)}`, sub: `${modeLabel[h.upcoming.mode]} consultation • ${h.upcoming.practitioner}`, pill: status(h.upcoming.status) }) : ''}
+      ${h.activeOrder ? ecard({ go: `#/c/order/${h.activeOrder.id}`, lead: iconTile('truck', 'solid'), title: `Order ${h.activeOrder.code}`, sub: h.activeOrder.seller, pill: status(h.activeOrder.status) }) : ''}
     </div>`))}
-    ${section(t('practitionersNear'), html`<div class="stack">${h.practitioners.slice(0, 4).map(pracCard)}</div>`, html`<a href="#/c/consult" class="small">${t('seeAll')}</a>`)}
-    ${section(t('shopProducts'), html`<div class="grid-cards">${h.products.slice(0, 4).map(productCard)}</div>`, html`<a href="#/c/products" class="small">${t('seeAll')}</a>`)}
-    ${section(t('learn'), html`<div class="list">${h.education.map((a) => html`<button type="button" class="list-item" data-go="#/c/article/${a.id}">${icon('book', 'lead')}<span class="li-main"><strong>${a.title}</strong><span class="small muted">${cap(a.category)} · ${a.readMinutes} min read</span></span></button>`)}</div>`, html`<a href="#/c/learn" class="small">${t('seeAll')}</a>`)}
-    <p class="note">${icon('shield')} Every practitioner, clinic and product here has passed PRORESMAT verification. Profiles show who provides each service and who sells each product.</p>`;
+    ${section('Available practitioners', html`<div class="stack">${h.practitioners.slice(0, 4).map(pracCard)}</div>`, html`<a href="#/c/consult">View all</a>`)}
+    ${section(t('shopProducts'), html`<div class="stack">${h.products.slice(0, 3).map(productCard)}</div>`, html`<a href="#/c/products">View all</a>`)}
+    ${section(t('learn'), html`<div class="list">${h.education.map((a) => html`<button type="button" class="list-item" data-go="#/c/article/${a.id}">${icon('book', 'lead')}<span class="li-main"><strong>${a.title}</strong><span class="small muted">${cap(a.category)} · ${a.readMinutes} min read</span></span>${icon('back', 'flip')}</button>`)}</div>`, html`<a href="#/c/learn">View all</a>`)}
+    ${banner('', 'Every practitioner, clinic and product here has passed PRORESMAT verification.', 'shield')}`;
 }, { auth: false });
 
 route('/c/search', async (ctx) => {
@@ -55,7 +61,7 @@ route('/c/search', async (ctx) => {
   const r = q ? await api('search.all', { q }) : { practitioners: [], clinics: [], products: [] };
   ctx.form('search', (v) => go('#/c/search?q=' + encodeURIComponent(v.q || '')));
   const total = r.practitioners.length + r.clinics.length + r.products.length;
-  return html`<form class="search" data-form="search" role="search">${icon('search')}<input name="q" type="search" value="${q}" placeholder="${t('search')}" aria-label="Search"><button class="btn small primary">Search</button></form>
+  return html`<form class="search" data-form="search" role="search">${icon('search')}<input name="q" type="search" value="${q}" placeholder="${t('search')}" aria-label="Search"><button class="search-go" aria-label="Search">${icon('back', 'flip')}</button></form>
     ${!q ? empty('Search PRORESMAT', 'Try a name, a town, "Twi", "tea" or "skin".') : total === 0 ? empty('No results', 'Only verified practitioners, active clinics and approved products appear. Try another word.') : ''}
     ${when(r.practitioners.length, () => section('Practitioners', html`<div class="stack">${r.practitioners.map(pracCard)}</div>`))}
     ${when(r.clinics.length, () => section('Clinics', html`<div class="list">${r.clinics.map((c) => html`<button type="button" class="list-item" data-go="#/c/clinic/${c.id}">${icon('box', 'lead')}<span class="li-main"><strong>${c.name}</strong><span class="small muted">${c.address}</span></span></button>`)}</div>`))}
@@ -72,7 +78,7 @@ route('/c/consult', async (ctx) => {
     const q = new URLSearchParams({ tab: 'find', category: f.category.value, mode: f.mode.value, providerClass: f.providerClass.value });
     go('#/c/consult?' + q);
   });
-  const head = tabs([['find', 'Find a practitioner'], ['mine', 'My consultations']], tab);
+  const head = html`${pageHead('Consultations', 'Verified practitioners • in person, telephone or video')}${tabs([['find', 'Find a practitioner'], ['mine', 'My consultations']], tab)}`;
   if (tab === 'mine') {
     if (!S.user) return html`${head}${empty('Sign in to see your consultations', '', html`<button class="btn primary" data-go="#/login?next=%23%2Fc%2Fconsult%3Ftab%3Dmine">Sign in</button>`)}`;
     const list = await api('bookings.list');
@@ -109,7 +115,7 @@ route('/c/practitioner/:id', async (ctx) => {
     ])}
     ${when(p.bio, () => section('About', html`<p>${p.bio}</p>`))}
     ${section('Reviews', p.reviews.length ? html`<div class="list">${p.reviews.map((r) => html`<div class="list-item"><span class="li-main"><span>${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)} <span class="muted small">${r.authorName} · ${fmtDate(r.createdAt)}</span></span><span class="small">${r.text}</span></span></div>`)}</div><p class="muted small">Reviews describe the service experience and are moderated. They are not evidence that a treatment works.</p>` : html`<p class="muted">No reviews yet.</p>`)}
-    <div class="sticky-cta"><button class="btn primary block" data-go="#/c/book/${p.id}" ${p.nextAvailable ? '' : raw('disabled')}>Book a consultation · ${money(p.fee)}</button></div>`;
+    <div class="sticky-cta"><button class="btn primary block" data-go="#/c/book/${p.id}" ${p.nextAvailable ? '' : raw('disabled')}>Book consultation · ${money(p.fee)}</button></div>`;
 }, { auth: false });
 
 // ---------- Booking wizard ----------
@@ -296,6 +302,7 @@ route('/c/products', async (ctx) => {
     go('#/c/products?' + new URLSearchParams({ category: f.category.value, seller: f.seller.value, form: f.form.value }));
   });
   return html`
+    ${pageHead('Herbal products', 'Approved products from verified sellers')}
     <form class="filters" onsubmit="return false">
       ${select('category', S.meta.productCategories.map((c) => [c, c]), q.category || '', { blank: 'All categories' })}
       ${select('seller', S.meta.sellers.map((s) => [s.id, s.label]), q.seller || '', { blank: 'All sellers' })}
@@ -303,7 +310,7 @@ route('/c/products', async (ctx) => {
     </form>
     ${when(S.meta.flags.conventionalPharmacy, () => html`<button type="button" class="card choice" data-go="#/c/rx">${icon('doc', 'lead')}<span><strong>Prescription medicines</strong><span class="small muted">Upload a prescription for validation by a licensed partner pharmacy</span></span></button>`, () => html`<p class="note">${icon('shield')} Prescription-only medicines are not sold in the app. They will be added through licensed partner pharmacies after regulatory approval.</p>`)}
     <p class="muted small">${list.length} approved product${list.length === 1 ? '' : 's'}</p>
-    <div class="grid-cards">${list.length ? list.map(productCard) : empty('No products match', 'Clear a filter to see more.')}</div>
+    <div class="stack">${list.length ? list.map(productCard) : empty('No products match', 'Clear a filter to see more.')}</div>
     ${disclaimer()}`;
 }, { auth: false });
 
@@ -389,7 +396,7 @@ route('/c/orders', async (ctx) => {
   ctx.title = t('orders');
   const tab = ctx.query.tab || 'orders';
   ctx.act('tab', (d) => go('#/c/orders?tab=' + d.v));
-  const head = S.meta.flags.conventionalPharmacy ? tabs([['orders', 'Orders'], ['rx', 'Prescriptions']], tab) : '';
+  const head = html`${pageHead('Orders', 'Track deliveries, pickups and receipts')}${S.meta.flags.conventionalPharmacy ? tabs([['orders', 'Orders'], ['rx', 'Prescriptions']], tab) : ''}`;
   if (tab === 'rx') return html`${head}${await rxList()}`;
   const list = await api('orders.list');
   return html`${head}${list.length ? html`<div class="list">${list.map((o) => html`<button type="button" class="list-item" data-go="#/c/order/${o.id}">${icon('bag', 'lead')}<span class="li-main"><strong>${o.code} · ${money(o.total)}</strong><span class="small">${o.seller}</span><span class="small muted">${fmtDate(o.createdAt)} · ${o.items.length} item(s) · ${o.deliveryMethod === 'delivery' ? 'Delivery' : 'Pickup'}</span></span>${status(o.status)}</button>`)}</div>` : empty('No orders yet', '', html`<button class="btn primary" data-go="#/c/products">Browse products</button>`)}`;
@@ -486,7 +493,7 @@ route('/c/profile', async (ctx) => {
   });
   const tile = (href, ic, label, count, sub) => html`<button type="button" class="tile" data-go="${href}">${icon(ic)}<strong>${label}</strong><span class="small muted">${count}${sub ? ' ' + sub : ''}</span></button>`;
   return html`
-    <div class="card row"><span class="avatar" style="--h:150;width:52px;height:52px;font-size:19px">${u.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span><div class="grow"><strong>${u.name}</strong><p class="small muted">${u.email} · ${phone(u.phone)}</p>${when(u.isPlus, () => html`<span class="badge gold">PRORESMAT Plus to ${fmtDate(u.plusUntil)}</span>`)}</div></div>
+    <div class="profile-head"><span class="avatar" style="--h:160;width:64px;height:64px;font-size:22px">${u.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span><div><h2 class="page-title" style="font-size:1.4rem">${u.name}</h2><p class="small muted">${u.email} · ${phone(u.phone)}</p><span class="row wrap" style="gap:6px">${pill('Customer')}${when(u.isPlus, () => html`<span class="badge gold">PRORESMAT Plus to ${fmtDate(u.plusUntil)}</span>`)}</span></div></div>
     ${section('My health dashboard', html`<div class="tiles">
       ${tile('#/c/consult?tab=mine', 'consult', 'Consultations', bookings.filter((b) => ['confirmed', 'in_progress'].includes(b.status)).length, 'upcoming')}
       ${tile('#/c/careplans', 'clip', 'Care plans & prescriptions', plans.length, '')}

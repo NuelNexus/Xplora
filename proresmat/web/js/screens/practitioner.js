@@ -1,6 +1,6 @@
 // Practitioner workspace: Today • Patients • Consult • Earnings • Profile
 import { route, S, go, api, toast, sheet, confirmSheet, refresh, closeSheets } from '../app.js';
-import { regLabel, html, raw, icon, money, fmtDate, fmtDay, fmtTime, fmtDateTime, cap, words, avatar, status, classBadge, empty, kv, section, tabs, field, input, textarea, select, check, when, readFileB64 } from '../ui.js';
+import { ecard, iconTile, pageHead, banner, statTile, pill, regLabel, html, raw, icon, money, fmtDate, fmtDay, fmtTime, fmtDateTime, cap, words, avatar, status, classBadge, empty, kv, section, tabs, field, input, textarea, select, check, when, readFileB64 } from '../ui.js';
 import { viewDoc } from './customer.js';
 
 const modeIcon = { physical: 'pin', telephone: 'phone', video: 'video' };
@@ -15,27 +15,43 @@ const apptRow = (b) => html`<button type="button" class="list-item" data-go="#/p
 route('/p/today', async (ctx) => {
   ctx.title = 'Today';
   const p = await me();
-  if (!p) return needProfile();
+  if (!p) return html`${pageHead('Welcome', 'Complete credentialing to start receiving bookings')}${needProfile()}`;
   const appts = await api('practitioner.appointments');
-  const today = new Date(Date.now() + (S.nowOffsetDays || 0) * 86400000).toISOString().slice(0, 10);
+  const nowMs = Date.now() + (S.nowOffsetDays || 0) * 86400000;
+  const today = new Date(nowMs).toISOString().slice(0, 10);
+  const open = appts.filter((b) => ['confirmed', 'in_progress'].includes(b.status));
+  const next = open.find((b) => b.status === 'in_progress') || open.find((b) => Date.parse(b.end) > nowMs) || null;
   const todays = appts.filter((b) => b.start.slice(0, 10) === today && !b.status.startsWith('cancelled'));
-  const upcoming = appts.filter((b) => b.start.slice(0, 10) > today && b.status === 'confirmed').slice(0, 6);
+  const upcoming = open.filter((b) => b !== next).slice(0, 5);
   const toDocument = appts.filter((b) => b.status === 'in_progress' || (b.status === 'completed' && !b.notes?.assessment));
+  const reviews = appts.filter((b) => b.supervisorReview?.status === 'changes_advised');
+  let supQueue = 0;
+  if (S.user.roles.includes('supervisor')) supQueue = (await api('supervisor.queue')).cases.filter((c) => c.supervisorReview.status === 'requested').length;
   const days = Math.round((Date.parse(p.licenceExpiry) - Date.parse(today)) / 86400000);
+  const dateLabel = new Date(nowMs).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  const statusBanner = p.status !== 'active'
+    ? banner('warn', `Profile ${words(p.status)}. ${p.status === 'submitted' ? 'PRORESMAT is verifying your credentials.' : p.status === 'changes_required' ? 'Update your application in Profile.' : 'Contact PRORESMAT.'}`)
+    : !p.bookable ? banner('bad', 'Licence expired • hidden from search until renewal is verified')
+      : days <= 30 ? banner('warn', `Licence expires in ${days} day${days === 1 ? '' : 's'} • renew in Profile`)
+        : banner('', `Licence verified • ${p.providerClass === 'supervised' ? 'Supervision active' : 'Verified independent'}`);
+  const tasks = [
+    toDocument.length && { go: '#/p/consults', ic: 'clip', title: `${toDocument.length} consultation note${toDocument.length === 1 ? '' : 's'}`, sub: 'Complete before settlement approval', pill: pill('Documentation', 'gold') },
+    reviews.length && { go: `#/p/consult/${reviews[0].id}`, ic: 'shield', title: `${reviews.length} supervisor comment${reviews.length === 1 ? '' : 's'}`, sub: 'Changes advised on a case', pill: pill('Supervisory review') },
+    supQueue && { go: '#/p/supervision', ic: 'people', title: `${supQueue} case review${supQueue === 1 ? '' : 's'}`, sub: 'Requested by practitioners you supervise', pill: pill('Supervisor') },
+    p.status === 'active' && days <= 30 && { go: '#/p/profile', ic: 'alert', title: 'Licence renewal', sub: `${fmtDate(p.licenceExpiry)} • ${Math.max(days, 0)} days remaining`, pill: pill('Renewal required', 'warn'), tone: 'gold' },
+  ].filter(Boolean);
   return html`
-    <div class="card row">${avatar(p.avatar, 48, p.fullName)}<div class="grow"><strong>${p.fullName}</strong><p class="small">${p.title}</p>${classBadge(p.providerClass, p.classLabel)}</div>${status(p.status)}</div>
-    ${when(p.status !== 'active', () => html`<p class="note warn">${icon('clock')} Your profile is ${words(p.status)}. ${p.status === 'submitted' ? 'PRORESMAT is reviewing your credentials.' : p.status === 'changes_required' ? 'Update your application in Profile.' : 'Contact PRORESMAT.'}</p>`)}
-    ${when(p.status === 'active' && !p.bookable, () => html`<p class="note bad">${icon('alert')} You are hidden from search and cannot receive bookings because a licence has expired. Submit a renewal in Profile.</p>`)}
-    ${when(days >= 0 && days <= 30, () => html`<p class="note warn">${icon('clock')} Your licence expires in ${days} day(s) on ${fmtDate(p.licenceExpiry)}.</p>`)}
-    <div class="stats"><div><strong>${todays.length}</strong><span>today</span></div><div><strong>${upcoming.length}</strong><span>upcoming</span></div><div><strong>${toDocument.length}</strong><span>to document</span></div></div>
-    ${section(`Today, ${fmtDay(today)}`, todays.length ? html`<div class="list">${todays.map(apptRow)}</div>` : html`<p class="muted">No consultations today.</p>`)}
-    ${when(toDocument.length, () => section('Needs documentation', html`<div class="list">${toDocument.map(apptRow)}</div>`))}
-    ${section('Coming up', upcoming.length ? html`<div class="list">${upcoming.map((b) => html`<button type="button" class="list-item" data-go="#/p/consult/${b.id}">${icon(modeIcon[b.mode], 'lead')}<span class="li-main"><strong>${fmtDay(b.start)}, ${fmtTime(b.start)}</strong><span class="small">${b.customerName} · ${modeLabel[b.mode]}</span></span></button>`)}</div>` : html`<p class="muted">Nothing booked yet.</p>`)}
-    ${when(S.user.roles.includes('supervisor'), () => html`<button class="btn ghost block" data-go="#/p/supervision">${icon('shield')} Supervision queue</button>`)}`;
+    ${pageHead("Today’s practice", dateLabel)}
+    ${statusBanner}
+    ${section('Next consultation', next ? html`<div class="stack">${ecard({ go: `#/p/consult/${next.id}`, lead: iconTile(modeIcon[next.mode]), title: next.customerName, sub: `${fmtDay(next.start)}, ${fmtTime(next.start)} • ${modeLabel[next.mode]} • ${next.code}`, pill: next.status === 'in_progress' ? status('in_progress', 'In progress') : pill(next.consentAt ? 'Consent given' : 'Consent pending') })}<button class="btn primary big block" data-go="#/p/consult/${next.id}">Open consultation record</button></div>` : empty('No upcoming consultations', 'Keep your availability up to date in Profile.'), html`<a href="#/p/consults">View schedule</a>`)}
+    <div class="stat-grid">${statTile(todays.length, 'Today', 'consultations')}${statTile(open.length, 'Open', 'confirmed or in progress', 'gold')}</div>
+    ${section('Tasks requiring attention', tasks.length ? html`<div class="stack">${tasks.map((t_) => ecard({ go: t_.go, lead: iconTile(t_.ic, t_.tone || ''), title: t_.title, sub: t_.sub, pill: t_.pill }))}</div>` : banner('', 'All caught up'))}
+    ${when(upcoming.length, () => section('Coming up', html`<div class="list">${upcoming.map((b) => html`<button type="button" class="list-item" data-go="#/p/consult/${b.id}">${icon(modeIcon[b.mode], 'lead')}<span class="li-main"><strong>${fmtDay(b.start)}, ${fmtTime(b.start)}</strong><span class="small muted">${b.customerName} • ${modeLabel[b.mode]}</span></span>${icon('back', 'flip')}</button>`)}</div>`))}`;
 }, { auth: true });
 
 route('/p/patients', async (ctx) => {
   ctx.title = 'Patients';
+  ctx.sub = 'People who have booked with you';
   const p = await me();
   if (!p) return needProfile();
   const list = await api('practitioner.patients');
@@ -53,6 +69,7 @@ route('/p/patient/:id', async (ctx) => {
 
 route('/p/consults', async (ctx) => {
   ctx.title = 'Consultations';
+  ctx.sub = 'Your schedule and clinical records';
   const p = await me();
   if (!p) return needProfile();
   const tab = ctx.query.tab || 'open';
@@ -169,6 +186,7 @@ route('/p/supervision', async (ctx) => {
 // ---------- earnings ----------
 route('/p/earnings', async (ctx) => {
   ctx.title = 'Earnings';
+  ctx.sub = 'Fees, commission and settlement status';
   const p = await me();
   if (!p) return needProfile();
   return earningsView(await api('earnings.mine', { as: 'practitioner' }), 'consultation');
@@ -187,6 +205,7 @@ export function earningsView(e, kind) {
 // ---------- profile / credentialing / availability ----------
 route('/p/profile', async (ctx) => {
   ctx.title = 'Profile';
+  ctx.sub = 'Credentials, availability and public profile';
   const { profile: p, councils, categories } = await api('practitioner.me');
   const editable = !p || ['draft', 'changes_required'].includes(p.status);
   ctx.form('apply', async (v) => {

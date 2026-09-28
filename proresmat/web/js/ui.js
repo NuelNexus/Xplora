@@ -76,7 +76,8 @@ const P = {
 };
 export const icon = (name, cls = '') => raw(`<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="${P[name] || P.leaf}"/></svg>`);
 
-export const logo = (size = 28) => raw(`<svg width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="var(--primary)"/><path d="M9 22c0-8 5.5-13 14-13 0 8.5-5.5 13-14 13zm0 0 7.5-7.5" fill="none" stroke="var(--gold-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
+export const logo = (size = 44) => raw(`<span class="brand-tile lg" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.5)}px" aria-hidden="true">P</span>`);
+export const logoMark = (size = 28) => raw(`<svg width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="var(--primary)"/><path d="M9 22c0-8 5.5-13 14-13 0 8.5-5.5 13-14 13zm0 0 7.5-7.5" fill="none" stroke="var(--gold-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
 
 // ---------- components ----------
 export const avatar = (a, size = 48, label = '') => raw(`<span class="avatar" style="--h:${a?.hue ?? 150};width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px" role="img" aria-label="${esc(label || 'Practitioner')}">${esc(a?.initials || '?')}</span>`);
@@ -180,3 +181,21 @@ export const readFileB64 = (file) => new Promise((resolve, reject) => {
 });
 
 export const idem = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+
+// ---------- template components (report figures 2–5) ----------
+export const pageHead = (title, sub = '', aside = '') => html`<header class="page-head"><div><h2 class="page-title">${title}</h2>${when(sub, () => html`<p class="page-sub">${sub}</p>`)}</div>${aside}</header>`;
+export const banner = (tone, content, ic) => html`<div class="banner ${tone}" role="${tone === 'bad' ? 'alert' : 'status'}">${icon(ic || (tone === 'bad' ? 'alert' : tone === 'warn' ? 'clock' : 'check'))}<span>${content}</span></div>`;
+export const iconTile = (name, tone = '') => html`<span class="itile ${tone}" aria-hidden="true">${icon(name)}</span>`;
+export const qaTile = (go, ic, title, sub) => html`<button type="button" class="qa" data-go="${go}"><span class="qa-icon" aria-hidden="true">${icon(ic)}</span><strong>${title}</strong><span>${sub}</span></button>`;
+export const statTile = (value, label, sub = '', tone = 'green', go = '') => html`<${raw(go ? 'button type="button"' : 'div')} class="stat-tile ${tone}" ${go ? raw(`data-go="${esc(go)}"`) : ''}><strong>${value}</strong><span class="st-label">${label}</span>${when(sub, () => html`<span class="st-sub">${sub}</span>`)}</${raw(go ? 'button' : 'div')}>`;
+export const pill = (text, tone = '') => html`<span class="pill ${tone}">${text}</span>`;
+// Entity card: icon square (or avatar), title, subtitle, optional pill and right-hand value.
+export function ecard({ go = '', act = '', data = {}, lead, title, sub = '', pill: p = '', aside = '', extra = '' }) {
+  const attrs = raw([go && `data-go="${esc(go)}"`, act && `data-act="${esc(act)}"`, ...Object.entries(data).map(([k, v]) => `data-${k}="${esc(v)}"`)].filter(Boolean).join(' '));
+  const tag = go || act ? 'button type="button"' : 'div';
+  return html`<${raw(tag)} class="ecard ${go || act ? 'tap' : ''}" ${attrs}>${lead}<span class="ec-main"><strong class="ec-title">${title}</strong>${when(sub, () => html`<span class="ec-sub">${sub}</span>`)}${p}${extra}</span>${when(aside, () => html`<span class="ec-aside">${aside}</span>`)}</${raw(go || act ? 'button' : 'div')}>`;
+}
+export function greeting(nowMs = Date.now()) {
+  const h = new Date(nowMs).getUTCHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}

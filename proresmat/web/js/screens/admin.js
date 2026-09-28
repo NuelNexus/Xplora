@@ -1,6 +1,6 @@
 // PRORESMAT control centre: Overview • Approvals • Care • Finance • Risk
 import { route, S, go, api, toast, sheet, confirmSheet, refresh, closeSheets, signOut } from '../app.js';
-import { regLabel, html, raw, icon, money, fmtDate, fmtDateTime, cap, words, avatar, packArt, status, classBadge, empty, kv, section, tabs, field, input, textarea, select, check, when } from '../ui.js';
+import { ecard, iconTile, pageHead, banner, statTile, pill, regLabel, html, raw, icon, money, fmtDate, fmtDateTime, cap, words, avatar, packArt, status, classBadge, empty, kv, section, tabs, field, input, textarea, select, check, when } from '../ui.js';
 
 const has = (...r) => S.user.roles.some((x) => r.includes(x));
 const reasonAction = (apiName, idKey = 'id') => async (d) => {
@@ -17,17 +17,32 @@ route('/a/overview', async (ctx) => {
   ctx.title = 'Overview';
   ctx.wide = true;
   const o = await api('admin.overview');
+  const care = has('admin', 'support') ? await api('admin.care') : null;
   ctx.act('logout', () => signOut());
   const tile = (n, label, href, tone = '') => html`<button type="button" class="kpi ${tone}" data-go="${href}"><strong>${n}</strong><span>${label}</span></button>`;
+  const approvals = o.approvals.practitioners + o.approvals.orgs + o.approvals.products;
+  const reviewToday = o.care.urgent + o.care.adverse;
+  const queue = [];
+  if (care) {
+    for (const q of care.queue.filter((x) => x.status === 'open').slice(0, 3)) queue.push({ go: '#/a/care', ic: q.type === 'referral' ? 'flag' : 'alert', tone: q.priority === 'urgent' ? 'bad' : '', title: q.type === 'red_flag' ? 'Emergency screening follow-up' : q.type === 'referral' ? 'Referral follow-up' : cap(q.type), sub: q.summary, pill: q.priority === 'urgent' ? pill('High priority', 'bad') : pill('Follow-up') });
+    for (const a of care.adverse.filter((x) => ['new', 'under_review'].includes(x.status)).slice(0, 2)) queue.push({ go: '#/a/care?tab=adverse', ic: 'alert', tone: a.severity === 'severe' ? 'bad' : 'gold', title: 'Adverse event report', sub: `${a.productName || 'Consultation'} • ${words(a.kind)}`, pill: pill(cap(a.severity), a.severity === 'severe' ? 'bad' : 'warn') });
+    for (const t of care.tickets.filter((x) => x.kind === 'complaint' && !['resolved', 'closed'].includes(x.status)).slice(0, 2)) queue.push({ go: '#/a/care?tab=tickets', ic: 'people', title: 'Customer complaint', sub: t.subject, pill: pill('Open case') });
+  }
+  if (has('admin') && o.approvals.products) queue.push({ go: '#/a/approvals?tab=products', ic: 'box', title: 'Product listing to review', sub: `${o.approvals.products} listing${o.approvals.products === 1 ? '' : 's'} awaiting evidence review`, pill: pill('Approval') });
   return html`
-    <div class="row between"><p class="muted small">Signed in as ${S.user.name} · ${S.user.roles.map(cap).join(', ')}</p><button class="btn small ghost" data-act="logout">${icon('logout')} Sign out</button></div>
-    ${when(has('admin'), () => section('Approvals waiting', html`<div class="kpis">${tile(o.approvals.practitioners, 'Practitioners', '#/a/approvals?tab=practitioners', o.approvals.practitioners ? 'warn' : '')}${tile(o.approvals.orgs, 'Clinics & pharmacies', '#/a/approvals?tab=orgs', o.approvals.orgs ? 'warn' : '')}${tile(o.approvals.products, 'Product listings', '#/a/approvals?tab=products', o.approvals.products ? 'warn' : '')}${tile(o.approvals.reviews, 'Reviews to moderate', '#/a/care?tab=reviews')}</div>`))}
-    ${when(has('admin', 'support'), () => section('Care & safety', html`<div class="kpis">${tile(o.care.urgent, 'Urgent follow-ups', '#/a/care', o.care.urgent ? 'bad' : '')}${tile(o.care.open, 'Open care queue', '#/a/care')}${tile(o.care.adverse, 'Adverse events', '#/a/care?tab=adverse', o.care.adverse ? 'warn' : '')}${tile(o.care.complaints, 'Open complaints', '#/a/care?tab=tickets')}${tile(o.care.privacy, 'Privacy requests', '#/a/care?tab=privacy')}</div>`))}
-    ${when(has('admin', 'finance'), () => section('Finance', html`<div class="kpis">${tile(money(o.finance.collected), `Collected (${o.finance.payments} payments)`, '#/a/finance')}${tile(money(o.finance.refunded), 'Refunded', '#/a/finance?tab=refunds')}${tile(money(o.finance.revenue), 'PRORESMAT revenue', '#/a/finance?tab=ledger')}${tile(money(o.finance.eligible), 'Ready to settle', '#/a/finance?tab=settlements', o.finance.eligible ? 'ok' : '')}${tile(money(o.finance.onHold), 'Settlement on hold', '#/a/finance?tab=settlements')}${tile(o.finance.disputes, 'Open disputes', '#/a/finance?tab=disputes', o.finance.disputes ? 'bad' : '')}</div>`))}
+    ${pageHead('PRORESMAT control centre', 'Clinical, marketplace and financial oversight')}
+    ${reviewToday ? banner('bad', `${reviewToday} item${reviewToday === 1 ? '' : 's'} require${reviewToday === 1 ? 's' : ''} supervisory review today`) : banner('', 'No urgent safety items')}
+    <div class="stat-grid">
+      ${has('admin') ? statTile(approvals, 'Approvals', 'Practitioners, clinics and products', 'green', '#/a/approvals') : statTile(o.care.complaints, 'Complaints', 'Open cases', 'green', '#/a/care?tab=tickets')}
+      ${has('admin', 'finance') ? statTile(money(o.finance.eligible).replace('\u00a0', ' '), 'Settlements', 'Ready for the next payout run', 'gold money', '#/a/finance?tab=settlements') : statTile(o.care.open, 'Care queue', 'Open follow-ups', 'gold', '#/a/care')}
+    </div>
+    ${when(queue.length, () => section('Priority queue', html`<div class="stack">${queue.slice(0, 6).map((x) => ecard({ go: x.go, lead: iconTile(x.ic, x.tone || ''), title: x.title, sub: x.sub, pill: x.pill }))}</div>`))}
+    ${when(has('admin', 'support'), () => section('Care & safety', html`<div class="kpis">${tile(o.care.urgent, 'Urgent follow-ups', '#/a/care', o.care.urgent ? 'bad' : '')}${tile(o.care.open, 'Open care queue', '#/a/care')}${tile(o.care.adverse, 'Adverse events', '#/a/care?tab=adverse', o.care.adverse ? 'warn' : '')}${tile(o.care.complaints, 'Open complaints', '#/a/care?tab=tickets')}${tile(o.care.privacy, 'Privacy requests', '#/a/care?tab=privacy')}${tile(o.approvals.reviews, 'Reviews to moderate', '#/a/care?tab=reviews')}</div>`))}
+    ${when(has('admin', 'finance'), () => section('Finance', html`<div class="kpis">${tile(money(o.finance.collected), `Collected (${o.finance.payments} payments)`, '#/a/finance')}${tile(money(o.finance.refunded), 'Refunded', '#/a/finance?tab=refunds')}${tile(money(o.finance.revenue), 'PRORESMAT revenue', '#/a/finance?tab=ledger')}${tile(money(o.finance.onHold), 'Settlement on hold', '#/a/finance?tab=settlements', o.finance.onHold ? 'warn' : '')}${tile(o.finance.disputes, 'Open disputes', '#/a/finance?tab=disputes', o.finance.disputes ? 'bad' : '')}</div>`))}
     ${when(has('admin'), () => section('Risk', html`<div class="kpis">${tile(o.risk.expiringPractitioners, 'Licences expiring ≤30 days', '#/a/risk?tab=expiring', o.risk.expiringPractitioners ? 'warn' : '')}${tile(o.risk.expiringProducts, 'FDA registrations expiring', '#/a/risk?tab=expiring')}${tile(o.risk.failedLogins24h, 'Failed sign-ins (24 h)', '#/a/risk?tab=security')}</div>`))}
-    ${section('Platform', kv([['Active customers', o.counts.customers], ['Bookable practitioners', o.counts.activePractitioners], ['Products on sale', o.counts.liveProducts], ['Consultations', o.counts.bookings], ['Orders', o.counts.orders]]))}
+    ${section('Platform', html`<div class="kpis">${tile(o.counts.customers, 'Active customers', '#/a/overview')}${tile(o.counts.activePractitioners, 'Bookable practitioners', '#/a/approvals')}${tile(o.counts.liveProducts, 'Products on sale', '#/a/approvals?tab=products')}${tile(o.counts.bookings, 'Consultations', '#/a/overview')}${tile(o.counts.orders, 'Orders', '#/a/overview')}</div>`)}
     ${when(has('admin'), () => section('Recent activity', auditList(o.activity)))}
-    ${when(S.meta.demo, () => html`<button class="btn ghost" data-go="#/demo">Test tools (clock, outbox, reset)</button>`)}`;
+    <div class="row wrap">${when(S.meta.demo, () => html`<button class="btn ghost" data-go="#/demo">Test tools (clock, outbox, reset)</button>`)}<button class="btn ghost" data-act="logout">${icon('logout')} Sign out ${S.user.name}</button></div>`;
 }, { auth: true, wide: true });
 
 const auditList = (rows) => html`<div class="table-wrap"><table class="tbl small"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Record</th><th>Change</th><th>Reason</th></tr></thead><tbody>${rows.map((a) => html`<tr><td>${fmtDateTime(a.at)}</td><td>${a.actorName}</td><td class="mono">${a.action}</td><td class="mono">${a.entity}/${a.entityId.slice(-6)}</td><td class="small">${a.before ? html`<span class="muted">${JSON.stringify(a.before).slice(0, 60)}</span> → ` : ''}${a.after ? JSON.stringify(a.after).slice(0, 80) : ''}</td><td>${a.reason}</td></tr>`)}</tbody></table></div>`;
@@ -35,6 +50,7 @@ const auditList = (rows) => html`<div class="table-wrap"><table class="tbl small
 // ---------- approvals ----------
 route('/a/approvals', async (ctx) => {
   ctx.title = 'Approvals';
+  ctx.sub = 'Practitioners, clinics and product listings';
   ctx.wide = true;
   const tab = ctx.query.tab || 'practitioners';
   const r = await api('admin.approvals');
@@ -96,6 +112,7 @@ route('/a/approvals', async (ctx) => {
 // ---------- care ----------
 route('/a/care', async (ctx) => {
   ctx.title = 'Care & safety';
+  ctx.sub = 'Escalations, adverse events, complaints and privacy';
   ctx.wide = true;
   const tab = ctx.query.tab || 'queue';
   const r = await api('admin.care');
@@ -122,6 +139,7 @@ route('/a/care', async (ctx) => {
 // ---------- finance ----------
 route('/a/finance', async (ctx) => {
   ctx.title = 'Finance';
+  ctx.sub = 'Payments, refunds, ledger and settlements';
   ctx.wide = true;
   const tab = ctx.query.tab || 'payments';
   const f = await api('admin.finance');
@@ -176,6 +194,7 @@ route('/a/finance', async (ctx) => {
 // ---------- risk ----------
 route('/a/risk', async (ctx) => {
   ctx.title = 'Risk & audit';
+  ctx.sub = 'Audit trail, expiring evidence, security and flags';
   ctx.wide = true;
   const tab = ctx.query.tab || 'audit';
   const r = await api('admin.risk', { q: ctx.query.q || '' });
@@ -197,7 +216,7 @@ route('/a/risk', async (ctx) => {
       ['Book & pay, own records', 1, 1, 1, 1, 0, 0, 0], ['Clinical notes (own patients)', 0, 1, 1, 0, 0, 0, 0], ['Supervisee case review', 0, 0, 1, 0, 0, 0, 0], ['Medical documents (shared with them)', 1, 1, 1, 0, 0, 0, 0], ['Listings & fulfilment (own org)', 0, 0, 0, 1, 0, 0, 0],
       ['Payments, refunds, settlements', 0, 0, 0, 0, 1, 0, 1], ['Complaints, care queue, reviews', 0, 0, 0, 0, 0, 1, 1], ['Approvals, recalls, flags, audit', 0, 0, 0, 0, 0, 0, 1],
     ].map(([cap_, ...cells]) => html`<tr><td>${cap_}</td>${cells.map((c) => html`<td>${c ? '✓' : '—'}</td>`)}</tr>`)}</tbody></table></div><p class="muted small">Finance, support and admin staff cannot open clinical notes or medical documents.</p>`)}`;
-  return html`${head}<form class="search" data-form="q" role="search">${icon('search')}<input name="q" type="search" value="${ctx.query.q || ''}" placeholder="Filter by action, person, record or reason" aria-label="Filter audit log"><button class="btn small primary">Filter</button></form>${auditList(r.audit)}`;
+  return html`${head}<form class="search" data-form="q" role="search">${icon('search')}<input name="q" type="search" value="${ctx.query.q || ''}" placeholder="Filter by action, person, record or reason" aria-label="Filter audit log"><button class="search-go" aria-label="Filter">${icon('back', 'flip')}</button></form>${auditList(r.audit)}`;
 }, { auth: true, wide: true });
 
 export { raw };

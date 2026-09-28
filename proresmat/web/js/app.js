@@ -218,7 +218,9 @@ export async function render({ keepScroll = false } = {}) {
   document.title = ctx.title ? `${ctx.title} · PRORESMAT` : 'PRORESMAT Health Connect';
   headEl.innerHTML = String(header(ctx, env));
   main.className = `${ctx.wide ? 'wide' : ''}`;
-  main.innerHTML = String(html`<div class="page">${body}</div>`);
+  const needsHead = !ctx.back && env && !String(body).includes('class="page-head"');
+  const head = needsHead ? html`<header class="page-head"><div><h2 class="page-title">${ctx.title}</h2>${ctx.sub ? html`<p class="page-sub">${ctx.sub}</p>` : ''}</div></header>` : '';
+  main.innerHTML = String(html`<div class="page">${head}${body}</div>`);
   main.removeAttribute('aria-busy');
   navEl.innerHTML = String(env && !ctx.hideNav ? nav(env, path) : '');
   document.body.classList.toggle('has-nav', !!(env && !ctx.hideNav));
@@ -228,12 +230,18 @@ export async function render({ keepScroll = false } = {}) {
   updateBadges(env);
 }
 
+const ENV_SUB = { c: 'Customer application', p: 'Practitioner workspace', v: 'Clinic and vendor portal', a: 'Operations and governance' };
 function header(ctx, env) {
-  const backBtn = ctx.back ? html`<button type="button" class="icon-btn" data-go="${ctx.back}" aria-label="Back">${icon('back')}</button>` : html`<span class="brand">${logo(26)}</span>`;
-  const bell = S.user ? html`<button type="button" class="icon-btn" data-go="#/notifications" aria-label="${t('notifications')}${S.unread ? `, ${S.unread} unread` : ''}">${icon('bell')}<span class="dot" id="unread" ${S.unread ? '' : raw('hidden')}>${S.unread > 9 ? '9+' : S.unread}</span></button>` : html`<button type="button" class="btn small ghost" data-go="#/login?next=${encodeURIComponent(location.hash)}">${t('signIn')}</button>`;
-  const cart = env === 'c' || !env ? html`<button type="button" class="icon-btn" data-go="#/c/cart" aria-label="${t('cart')}">${icon('cart')}<span class="dot" id="cartcount" ${S.cartCount ? '' : raw('hidden')}>${S.cartCount}</span></button>` : '';
-  const envTag = env && env !== 'c' ? html`<span class="env-tag">${ENVS[env].label}</span>` : '';
-  return html`<div class="top-inner">${backBtn}<div class="top-title"><h1>${ctx.title || 'PRORESMAT'}</h1>${envTag}</div><div class="top-actions">${cart}${bell}</div></div>${when(S.info && S.info.mode === 'local' && !S.info.persistent, () => html`<div class="strip warn">This browser is blocking storage, so test data resets when you reload.</div>`)}`;
+  const sub = ENV_SUB[env] || 'Health Connect';
+  const lead = ctx.back
+    ? html`<button type="button" class="bar-btn" data-go="${ctx.back}" aria-label="Back">${icon('back')}</button><div class="bar-title"><strong>${ctx.title || 'PRORESMAT'}</strong><span>${sub}</span></div>`
+    : html`<a class="bar-brand" href="${S.user ? homeFor(S.user) : '#/c/home'}" aria-label="PRORESMAT home"><span class="brand-tile" aria-hidden="true">P</span><span class="bar-title"><strong>PRORESMAT</strong><span>${sub}</span></span></a>`;
+  const authPage = /^#\/(login|register|forgot)/.test(location.hash);
+  const bell = authPage ? '' : S.user
+    ? html`<button type="button" class="bar-btn" data-go="#/notifications" aria-label="${t('notifications')}${S.unread ? `, ${S.unread} unread` : ''}">${icon('bell')}<span class="dot" id="unread" ${S.unread ? '' : raw('hidden')}>${S.unread > 9 ? '9+' : S.unread}</span></button>`
+    : html`<button type="button" class="bar-signin" data-go="#/login?next=${encodeURIComponent(location.hash)}">${t('signIn')}</button>`;
+  const cart = !authPage && (env === 'c' || !env) ? html`<button type="button" class="bar-btn" data-go="#/c/cart" aria-label="${t('cart')}">${icon('cart')}<span class="dot" id="cartcount" ${S.cartCount ? '' : raw('hidden')}>${S.cartCount}</span></button>` : '';
+  return html`<div class="top-inner">${lead}<div class="top-actions">${cart}${bell}</div></div>${when(S.info && S.info.mode === 'local' && !S.info.persistent, () => html`<div class="strip warn">This browser is blocking storage, so test data resets when you reload.</div>`)}`;
 }
 
 function nav(env, path) {

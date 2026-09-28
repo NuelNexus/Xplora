@@ -18,7 +18,7 @@ const res = await build({
 });
 const js = res.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 const css = (await readFile(join(root, 'web/css/app.css'), 'utf8')).replace(/\s*\n\s*/g, '\n');
-const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">';
+const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">';
 const body = `<a class="skip" href="#main">Skip to content</a>
 <header id="top" class="top"></header>
 <div id="offline" class="strip bad" role="status" hidden>You are offline. Changes will fail until your connection returns.</div>
@@ -31,7 +31,7 @@ const body = `<a class="skip" href="#main">Skip to content</a>
 // Full HTML document for opening directly in a browser.
 await writeFile(join(out, 'proresmat-standalone.html'), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>PRORESMAT Health Connect</title><meta name="theme-color" content="#174a33">${fonts}<style>${css}</style></head>
+<title>PRORESMAT Health Connect</title><meta name="theme-color" content="#176b55">${fonts}<style>${css}</style></head>
 <body>${body}</body></html>`);
 
 // Fragment for hosts that supply their own document skeleton (claude.ai artifacts).

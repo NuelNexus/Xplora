@@ -1,6 +1,6 @@
 // Clinic / vendor portal: Dashboard • Products • Orders • Payouts • Compliance
 import { route, S, go, api, toast, sheet, confirmSheet, refresh, closeSheets, signOut } from '../app.js';
-import { html, raw, icon, money, fmtDate, fmtDateTime, cap, words, packArt, status, empty, kv, section, tabs, field, input, textarea, select, check, when } from '../ui.js';
+import { ecard, iconTile, pageHead, banner, statTile, pill, html, raw, icon, money, fmtDate, fmtDateTime, cap, words, packArt, status, empty, kv, section, tabs, field, input, textarea, select, check, when } from '../ui.js';
 import { earningsView } from './practitioner.js';
 
 async function org() { return api('org.me'); }
@@ -40,21 +40,32 @@ route('/v/dashboard', async (ctx) => {
   const r = await org();
   ctx.form('onboard', async (v) => { await api('org.apply', v); toast('Submitted. PRORESMAT will review your organisation.'); refresh(); });
   ctx.act('logout', () => signOut());
-  if (!r.org || ['draft', 'changes_required'].includes(r.org.status)) return onboarding(r.org);
+  if (!r.org || ['draft', 'changes_required'].includes(r.org.status)) return html`${pageHead('Partner onboarding', 'Register your clinic or pharmacy with PRORESMAT')}${onboarding(r.org)}`;
   const o = r.org;
-  const s = r.stats;
+  const st = r.stats;
+  const [c, orders] = await Promise.all([api('vendor.compliance'), api('vendor.orders')]);
+  const awaiting = orders.filter((x) => x.status === 'received').length;
+  const licDays = c.org.daysLeft;
+  const statusBanner = o.status !== 'active' ? banner('warn', o.status === 'submitted' ? 'Under PRORESMAT review • listings publish after approval' : `Organisation ${words(o.status)}`)
+    : licDays <= 30 ? banner('warn', `Facility licence expires in ${licDays} days • ${st.approved} approved listings`)
+      : banner('', `Facility licence active • ${st.approved} approved listing${st.approved === 1 ? '' : 's'}`);
+  const actions = [
+    ...c.products.filter((p) => ['approved', 'expired'].includes(p.status) && p.daysLeft <= 60).map((p) => ({ go: '#/v/compliance', ic: 'clock', tone: p.daysLeft < 0 ? 'bad' : 'gold', title: p.daysLeft < 0 ? 'Product registration expired' : 'Product registration expires', sub: `${p.name} • ${p.daysLeft < 0 ? 'sales blocked' : p.daysLeft + ' days remaining'}`, pill: pill('Renewal required', p.daysLeft < 0 ? 'bad' : 'warn') })),
+    ...c.products.filter((p) => p.status === 'changes_required').map((p) => ({ go: '#/v/products?tab=review', ic: 'clip', title: 'Changes requested', sub: `${p.name} • ${p.lastReason}`, pill: pill('Edit and resubmit') })),
+    ...c.adverse.filter((a2) => ['new', 'under_review'].includes(a2.status)).map((a2) => ({ go: '#/v/compliance', ic: 'alert', tone: 'bad', title: 'Safety report', sub: `${a2.productName} • ${words(a2.kind)}`, pill: pill('Open case', 'bad') })),
+    ...(st.rxPending ? [{ go: '#/v/rx', ic: 'doc', title: `${st.rxPending} prescription${st.rxPending === 1 ? '' : 's'} to validate`, sub: 'Pharmacist review required', pill: pill('Validation') }] : []),
+  ];
   return html`
-    <div class="card"><div class="row between"><div><p class="eyebrow">${o.seller}</p><h2>${o.name}</h2><p class="small muted">${o.address}</p></div>${status(o.status)}</div>
-      ${when(o.status === 'submitted', () => html`<p class="note">${icon('clock')} Under PRORESMAT review. You can prepare listings; they will be published only after approval.</p>`)}</div>
-    <div class="stats"><div><strong>${s.openOrders}</strong><span>open orders</span></div><div><strong>${s.approved}</strong><span>live listings</span></div><div><strong>${s.awaitingReview}</strong><span>awaiting review</span></div></div>
-    ${when(s.lowStock, () => html`<p class="note warn">${icon('alert')} ${s.lowStock} listing(s) have 5 or fewer in stock.</p>`)}
-    ${when(o.type === 'pharmacy', () => html`<button class="btn primary block" data-go="#/v/rx">${icon('doc')} Prescriptions to validate (${s.rxPending})</button>`)}
+    ${pageHead('Partner dashboard', `${o.name} • ${o.type === 'pharmacy' ? 'Licensed pharmacy partner' : o.type === 'proresmat' ? 'PRORESMAT dispensary' : 'Verified seller'}`)}
+    ${statusBanner}
+    <div class="stat-grid">${statTile(st.openOrders, 'New orders', `${awaiting} awaiting acceptance`, 'green', '#/v/orders')}${statTile(st.lowStock, 'Low-stock products', '5 or fewer left', 'gold', '#/v/products?tab=live')}</div>
+    ${section('Action required', actions.length ? html`<div class="stack">${actions.slice(0, 6).map((x) => ecard({ go: x.go, lead: iconTile(x.ic, x.tone || ''), title: x.title, sub: x.sub, pill: x.pill }))}</div>` : banner('', 'Nothing needs your attention'))}
+    <button class="btn primary big block" data-go="${o.type === 'pharmacy' ? '#/v/rx' : '#/v/orders'}">${o.type === 'pharmacy' ? 'Review prescriptions' : 'Review orders'}</button>
     <div class="list">
-      <button type="button" class="list-item" data-go="#/v/orders">${icon('truck', 'lead')}<span class="li-main"><strong>Fulfil orders</strong><span class="small muted">Accept, confirm stock, record batches, dispatch</span></span></button>
-      ${when(o.type !== 'pharmacy', () => html`<button type="button" class="list-item" data-go="#/v/products">${icon('box', 'lead')}<span class="li-main"><strong>Manage listings</strong><span class="small muted">Draft, submit for approval, update stock</span></span></button>`)}
-      <button type="button" class="list-item" data-go="#/v/compliance">${icon('shield', 'lead')}<span class="li-main"><strong>Compliance</strong><span class="small muted">Licences, FDA registrations, safety reports</span></span></button>
-    </div>
-    <div class="stack"><button class="btn ghost" data-act="logout">${icon('logout')} Sign out</button></div>`;
+      ${when(o.type !== 'pharmacy', () => html`<button type="button" class="list-item" data-go="#/v/products">${icon('box', 'lead')}<span class="li-main"><strong>Manage listings</strong><span class="small muted">${st.listings} listings • ${st.awaitingReview} awaiting PRORESMAT review</span></span>${icon('back', 'flip')}</button>`)}
+      <button type="button" class="list-item" data-go="#/v/payouts">${icon('wallet', 'lead')}<span class="li-main"><strong>Payouts</strong><span class="small muted">Settlement after delivery and hold period</span></span>${icon('back', 'flip')}</button>
+      <button type="button" class="list-item" data-act="logout">${icon('logout', 'lead')}<span class="li-main"><strong>Sign out</strong></span></button>
+    </div>`;
 }, { auth: true });
 
 const PRODUCT_FIELDS = (p = {}, cats = [], forms = []) => html`
@@ -78,6 +89,7 @@ const PRODUCT_FIELDS = (p = {}, cats = [], forms = []) => html`
 
 route('/v/products', async (ctx) => {
   ctx.title = 'Products';
+  ctx.sub = 'Listings, approval status and stock';
   const r = await api('vendor.products');
   const tab = ctx.query.tab || 'all';
   ctx.act('tab', (d) => go('#/v/products?tab=' + d.v));
@@ -98,6 +110,7 @@ route('/v/products', async (ctx) => {
 
 route('/v/orders', async (ctx) => {
   ctx.title = 'Orders';
+  ctx.sub = 'Accept, prepare and deliver';
   const tab = ctx.query.tab || 'open';
   ctx.act('tab', (d) => go('#/v/orders?tab=' + d.v));
   const list = await api('vendor.orders');
@@ -160,6 +173,7 @@ route('/v/rx', async (ctx) => {
 
 route('/v/payouts', async (ctx) => {
   ctx.title = 'Payouts';
+  ctx.sub = 'Your share after commission and holds';
   const r = await org();
   if (!r.org) return empty('Complete onboarding first', '', html`<button class="btn primary" data-go="#/v/dashboard">Start onboarding</button>`);
   if (r.org.type === 'proresmat') return html`<p class="note">${icon('shield')} Products sold by PRORESMAT are recorded as PRORESMAT revenue; there are no third-party payouts for this store.</p>`;
@@ -168,6 +182,7 @@ route('/v/payouts', async (ctx) => {
 
 route('/v/compliance', async (ctx) => {
   ctx.title = 'Compliance';
+  ctx.sub = 'Licences, registrations and safety reports';
   const r = await org();
   ctx.act('logout', () => signOut());
   if (!r.org) return empty('Complete onboarding first', '', html`<button class="btn primary" data-go="#/v/dashboard">Start onboarding</button>`);
