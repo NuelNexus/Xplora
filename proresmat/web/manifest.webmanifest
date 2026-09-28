@@ -1,0 +1,9 @@
+{
+  "name": "PRORESMAT Health Connect",
+  "short_name": "PRORESMAT",
+  "start_url": "./#/c/home",
+  "display": "standalone",
+  "background_color": "#f5f8f4",
+  "theme_color": "#174a33",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

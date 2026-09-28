@@ -1,0 +1,17 @@
+{
+  "name": "proresmat-health-connect",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PRORESMAT Health Connect: supervised traditional-medicine marketplace (reference implementation)",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --test test/engine.test.mjs",
+    "test:e2e": "node test/e2e-smoke.mjs && node test/e2e-flows.mjs",
+    "build": "node scripts/build-standalone.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}
